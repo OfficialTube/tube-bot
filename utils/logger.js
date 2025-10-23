@@ -11,7 +11,7 @@ async function logOffline(message) {
   try {
     const channel = await clientRef.channels.fetch(BOT_LOG_CHANNEL_ID);
     if (channel && channel.isTextBased()) {
-      await channel.send(`<@${BOT_LOGS_ROLE}> ${message}`);
+      await channel.send(`<@&${BOT_LOGS_ROLE}> ${message}`);
     }
   } catch (err) {
     console.error("Failed to send offline log:", err);
