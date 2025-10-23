@@ -39,7 +39,7 @@ module.exports = {
       if (targetUser.bot)
       {
         return interaction.editReply({
-          content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')} is a bot. Bots cannot earn XP.`,
+          content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}** is a bot. Bots cannot earn XP.`,
         });
       }
 
