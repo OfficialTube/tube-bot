@@ -36,7 +36,14 @@ module.exports = {
 
       const user = await User.findOne({ userId, guildId });
 
-      if (!targetUser) {
+      if (targetUser.bot)
+      {
+        return interaction.editReply({
+          content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')} is a bot. Bots cannot earn XP.`,
+        });
+      }
+
+      if (!user) {
         return interaction.editReply({
           content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')} doesn't have any XP yet! Start chatting to earn some.**`,
         });
