@@ -22,23 +22,21 @@ module.exports = {
 
     const epoch = parseInt(interaction.options.getString('timestamp').trim());
     if (isNaN(epoch)) {
-      return interaction.reply({ content: '❌ Invalid epoch timestamp!', ephemeral: true });
+      return interaction.reply({ content: 'Invalid epoch timestamp.', ephemeral: true });
     }
 
     const sendTime = epoch * 1000;
     const delay = sendTime - Date.now();
 
     if (delay <= 0) {
-      return interaction.reply({ content: '⚠️ That time is in the past!', ephemeral: true });
+      return interaction.reply({ content: 'That time is in the past.', ephemeral: true });
     }
 
-    // Confirm schedule time
     await interaction.reply({
       content: `Queue will open at <t:${epoch}:f>.`,
       ephemeral: true,
     });
 
-    // Build queue message
     const difficultyMenu = new StringSelectMenuBuilder()
       .setCustomId('queue_difficulty')
       .setPlaceholder('Select Difficulty')
@@ -57,7 +55,6 @@ module.exports = {
 
     const buttonRow = new ActionRowBuilder().addComponents(nextButton);
 
-    // Schedule the queue message
     setTimeout(async () => {
       await queueChannel.send({
         content:
