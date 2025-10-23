@@ -42,7 +42,7 @@ async function handleViewerGamesQueueInteractions(interaction)
             });
         }
     }
-    if (interactino.customId === 'sub_queue_difficulty')
+    if (interaction.customId === 'sub_queue_difficulty')
     {
         const confirmButton = new ButtonBuilder()
             .setCustomId('queue_confirm')
