@@ -59,7 +59,7 @@ async function handleMessageXP(message) {
   } catch (err) {
     console.error("❌ XP handling failed:", err);
     logOffline("❌ XP handling failed: levels.js");
-    return { user: null, leveledUp: false }; // Prevents crash
+    return { user: null, leveledUp: false }; 
   }
 }
 

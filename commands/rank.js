@@ -28,7 +28,6 @@ module.exports = {
 
   async execute(interaction) {
     try {
-      // Defer reply immediately to avoid timeout
       await interaction.deferReply();
 
       const targetUser = interaction.options.getUser("user") || interaction.user;
@@ -36,6 +35,13 @@ module.exports = {
       const guildId = interaction.guild.id;
 
       const user = await User.findOne({ userId, guildId });
+
+      if (targetUser.bot)
+      {
+        return interaction.editReply({
+          content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}** is a bot. Bots cannot earn XP.`,
+        });
+      }
 
       if (!user) {
         return interaction.editReply({
@@ -56,7 +62,6 @@ module.exports = {
       console.error("❌ MongoDB Error in /rank:", err);
       logOffline("MongoDB Error in /rank: rank.js");
 
-      // If the reply has already been deferred, use editReply
       if (interaction.deferred || interaction.replied) {
         return interaction.editReply({
           content: "⚠️ I couldn't connect to the database. Please try again later.",

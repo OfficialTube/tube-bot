@@ -21,7 +21,6 @@ module.exports = {
 
   async execute(interaction) {
     try {
-      // Defer reply immediately to avoid timeout
       await interaction.deferReply();
 
       const targetUser = interaction.options.getUser("user") || interaction.user;
@@ -67,7 +66,6 @@ module.exports = {
       console.error("❌ MongoDB Error in /leaderboard:", err);
       logOffline("MongoDB Error in /leaderboard: leaderboard.js");
 
-      // If the reply has already been deferred, use editReply
       if (interaction.deferred || interaction.replied) {
         return interaction.editReply({
           content: "⚠️ I couldn't connect to the database. Please try again later.",

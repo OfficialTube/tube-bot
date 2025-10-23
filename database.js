@@ -21,7 +21,6 @@ module.exports = async () => {
     logOffline("❌ MongoDB connection error");
   }
 
-  // === Reconnection & Event Handlers ===
   mongoose.connection.on("disconnected", () => {
     console.warn("⚠️  MongoDB disconnected. Attempting to reconnect...");
     logOffline("⚠️  MongoDB disconnected. Attempting to reconnect...");
