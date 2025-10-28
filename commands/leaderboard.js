@@ -17,7 +17,7 @@ function formatNumber(n)
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leaderboard")
-    .setDescription("Check the top 10 users on the leaderboard!"),
+    .setDescription("Check the top users on the leaderboard!"),
 
   async execute(interaction) {
     try {
@@ -33,12 +33,19 @@ module.exports = {
       const rank = allUsers.findIndex(u => u.userId === userId) + 1;
       const totalUsers = allUsers.length;
 
-      const top10 = allUsers.slice(0, 10);
+      const top5all = allUsers.slice(0, 5);
 
-      let leaderboardText = `# **__Top 10 Leaderboard__**\n\n`;
+      const allWeeklyUsers = await User.find({guildId, weeklyxp: { $gt: 0 } }).sort({weeklyxp: -1});
+      const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
+      const totalWeeklyUsers = allWeeklyUsers.length;
 
-      for (let i = 0; i < top10.length; i++) {
-        const u = top10[i];
+      const top5weekly = allWeeklyUsers.slice(0, 5);
+
+      let leaderboardTextAll = `# **__Top 5 Leaderboard: All Time__**\n\n`;
+      let leaderboardTextWeekly =  `\n# **__Top 5 Leaderboard: This Week__**\n\n`;
+
+      for (let i = 0; i < top5all.length; i++) {
+        const u = top5all[i];
         const position = i + 1;
       
         const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
@@ -49,17 +56,40 @@ module.exports = {
           ? `**${position}\\. ${username} — ${xp} XP**\n`
           : `${position}\\. ${username} — ${xp} XP\n`;
         
-        leaderboardText += line;
+        leaderboardTextAll += line;
       }
       
-      if (rank > 10) {
+      if (rank > 5) {
         const username = (await interaction.client.users.fetch(userId)).username;
         const xp = formatNumber(user.totalxp);
-        leaderboardText += `**${rank}\\. ${username} — ${xp} XP**`;
+        leaderboardTextWeekly += `**${rank}\\. ${username} — ${xp} XP**`;
       }
 
+      for (let i = 0; i < top5weekly.length; i++) {
+        const u = top5weekly[i];
+        const position = i + 1;
+      
+        const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
+        const weeklyxp = formatNumber(u.weeklyxp);
+      
+        const isSender = u.userId === userId;
+        const line = isSender
+          ? `**${position}\\. ${username} — ${weeklyxp} XP**\n`
+          : `${position}\\. ${username} — ${weeklyxp} XP\n`;
+        
+        leaderboardTextAll += line;
+      }
+      
+      if (weeklyRank > 5) {
+        const username = (await interaction.client.users.fetch(userId)).username;
+        const weeklyxp = formatNumber(user.weeklyxp);
+        leaderboardTextWeekly += `**${weeklyRank}\\. ${username} — ${weeklyxp} XP**`;
+      }
+
+      let leaderboardText = leaderboardTextAll + leaderboardTextWeekly;
+
       return interaction.editReply({
-        content: leaderboardText
+        content: leaderboardText 
       });
 
     } catch (err) {
