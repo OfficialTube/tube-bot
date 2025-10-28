@@ -5,6 +5,7 @@ const { getMultiplier } = require("../utils/multiplier");
 
 function formatNumber(n)
 {
+  if (n == null || isNaN(n)) return "0";
   if (n >= 10_000)
   {
     return (n / 1_000).toFixed(3).replace(/\.?0+$/, "") + "k";
