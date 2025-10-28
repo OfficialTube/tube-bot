@@ -55,7 +55,7 @@ module.exports = {
       const totalUsers = allUsers.length;
       const xpmultiplier = await getMultiplier(targetUser, interaction.guild, interaction.client);
 
-      const allWeeklyUsers = await User.find({guildId, weeklyXP: { $gt: 0 } }).sort({weeklyXP: -1});
+      const allWeeklyUsers = await User.find({guildId, weeklyxp: { $gt: 0 } }).sort({weeklyxp: -1});
       const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
       const totalWeeklyUsers = allWeeklyUsers.length;
 
@@ -69,7 +69,7 @@ module.exports = {
       }
 
       return interaction.editReply({
-        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyXP)}`,
+        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}`,
       });
 
     } catch (err) {
