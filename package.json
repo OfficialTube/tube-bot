@@ -13,7 +13,8 @@
   "dependencies": {
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
-    "mongoose": "^8.15.1"
+    "mongoose": "^8.15.1",
+    "node-cron": "4.2.1"
   },
   "nodeVersion": "23.1.0"
 }
