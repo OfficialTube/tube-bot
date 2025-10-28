@@ -5,6 +5,7 @@ const { getMultiplier } = require("../utils/multiplier");
 
 function formatNumber(n)
 {
+  if (n == null || isNaN(n)) return "0";
   if (n >= 10_000)
   {
     return (n / 1_000).toFixed(3).replace(/\.?0+$/, "") + "k";
@@ -54,8 +55,21 @@ module.exports = {
       const totalUsers = allUsers.length;
       const xpmultiplier = await getMultiplier(targetUser, interaction.guild, interaction.client);
 
+      const allWeeklyUsers = await User.find({guildId, weeklyxp: { $gt: 0 } }).sort({weeklyxp: -1});
+      const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
+      const totalWeeklyUsers = allWeeklyUsers.length;
+
+      let weeklyRankDisplay;
+      if (!weeklyRank)
+      {
+        weeklyRankDisplay = 'Rank: Unranked';
+      } else
+      {
+        weeklyRankDisplay = `Rank: ${formatNumber(weeklyRank)} of ${formatNumber(totalWeeklyUsers)}`;
+      }
+
       return interaction.editReply({
-        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}`,
+        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}`,
       });
 
     } catch (err) {

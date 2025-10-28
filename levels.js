@@ -19,7 +19,8 @@ async function handleMessageXP(message) {
         level: 0,
         levelxp: 10,
         totalxp: 0,
-        lastmsg: 0
+        lastmsg: 0,
+        weeklyxp: 0
       });
     }
 
@@ -43,6 +44,7 @@ async function handleMessageXP(message) {
       user.pxp -= 10;
       user.xp++
       user.totalxp++;
+      user.weeklyxp++;
     }
 
     let leveledUp = false;

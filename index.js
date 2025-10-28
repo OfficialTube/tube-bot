@@ -3,10 +3,14 @@ const { Client, GatewayIntentBits, Collection } = require("discord.js");
 const connectDB = require("./database");
 const fs = require("fs");
 const { handleMessageXP } = require("./levels");
+const { handleViewerGamesQueueInteractions } = require('./interactions/viewerGamesQueueInteractions');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
+
+const weeklyReset = require('./events/weeklyReset');
+weeklyReset(client);
 
 client.commands = new Collection();
 const commandFiles = fs.readdirSync("./commands");
@@ -14,6 +18,10 @@ for (const file of commandFiles) {
   const command = require(`./commands/${file}`);
   client.commands.set(command.data.name, command);
 }
+
+client.on('interactionCreate', async interaction => {
+  await handleViewerGamesQueueInteractions(interaction);
+});
 
 const BOT_LOG_CHANNEL_ID = "1424584591590555648"; 
 const YOUR_USER_ID = "464597977798017024"; 
