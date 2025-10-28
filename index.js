@@ -4,12 +4,13 @@ const connectDB = require("./database");
 const fs = require("fs");
 const { handleMessageXP } = require("./levels");
 const { handleViewerGamesQueueInteractions } = require('./interactions/viewerGamesQueueInteractions');
-const weeklyReset = require('./events/weeklyReset');
-weeklyReset(client);
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
 });
+
+const weeklyReset = require('./events/weeklyReset');
+weeklyReset(client);
 
 client.commands = new Collection();
 const commandFiles = fs.readdirSync("./commands");
