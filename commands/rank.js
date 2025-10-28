@@ -62,7 +62,7 @@ module.exports = {
       let weeklyRankDisplay;
       if (!weeklyRank)
       {
-        weeklyRankDisplay = 'Unranked';
+        weeklyRankDisplay = 'Rank: Unranked';
       } else
       {
         weeklyRankDisplay = `Rank: ${formatNumber(weeklyRank)} of ${formatNumber(totalWeeklyUsers)}`;
