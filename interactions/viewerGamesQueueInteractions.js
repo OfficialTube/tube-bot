@@ -73,7 +73,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
       return interaction.editReply({
         content:
           "🎉 Since you're a **Twitch Subscriber**, you get to play **2 extra games!**\nSelect your **bonus difficulty** below, then click **Next**.",
-        components: [row, buttonRow],
+        components: [row],
       });
     }
 
@@ -99,8 +99,9 @@ async function handleViewerGamesQueueInteractions(interaction) {
     current.subDifficulty = diff;
     userSelections.set(userId, current);
 
-    return await interaction.editReply({
+    return interaction.editReply({
       content: `Selected bonus difficulty: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
+      components: [buttonRow],
     });
   }
 
