@@ -53,12 +53,6 @@ module.exports = (client) => {
 
         user.pxp = (user.pxp || 0) + bonusPxp;
 
-        while (user.pxp >= 10) {
-          user.pxp -= 10;
-          user.xp = (user.xp || 0) + 1;
-          user.totalxp = (user.totalxp || 0) + 1;
-        }
-
         const visibleBonus = Math.floor(bonusPxp / 10);
 
         user.weeklyxp = 0;
