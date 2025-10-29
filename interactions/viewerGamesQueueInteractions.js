@@ -101,11 +101,19 @@ async function handleViewerGamesQueueInteractions(interaction)
       queueGroup = new ViewerQueue({ difficulty, players: [] });
     }
 
-    if (queueGroup.players.some((p) => p.id === userId)) {
-      return interaction.update({
-        content: 'You are already in this queue!',
-        components: [],
-      });
+    const alreadyInGroup = queueGroup.players.some(p => p.id === userId);
+    if (alreadyInGroup) {
+    const otherGroup = await ViewerQueue.findOne({
+        difficulty,
+        isFull: false,
+        _id: { $ne: queueGroup._id }
+    });
+
+    if (otherGroup) {
+        queueGroup = otherGroup;
+    } else {
+        queueGroup = new ViewerQueue({ difficulty, players: [] });
+    }
     }
 
     queueGroup.players.push({ id: userId, username });
