@@ -48,13 +48,6 @@ module.exports = {
 
     const row = new ActionRowBuilder().addComponents(difficultyMenu);
 
-    const nextButton = new ButtonBuilder()
-      .setCustomId('queue_next_page')
-      .setLabel('Next')
-      .setStyle(ButtonStyle.Success);
-
-    const buttonRow = new ActionRowBuilder().addComponents(nextButton);
-
     setTimeout(async () => {
       await queueChannel.send({
         content:

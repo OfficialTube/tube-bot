@@ -99,7 +99,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
     current.subDifficulty = diff;
     userSelections.set(userId, current);
 
-    await interaction.deferReply({ ephemeral: true });
     return interaction.editReply({
       content: `Selected bonus difficulty: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
     });
@@ -122,7 +121,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     const row = new ActionRowBuilder().addComponents(confirmButton);
 
-    await interaction.deferReply({ ephemeral: true });
     return interaction.editReply({
       content: `**Selected Difficulties:**\n• ${difficultyLabels[data.difficulty]}\n• ${difficultyLabels[data.subDifficulty]}\nClick **Confirm** to join the queue.`,
       components: [row],
@@ -162,7 +160,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
       await queueGroup.save();
     }
 
-    await interaction.deferReply({ ephemeral: true });
     await interaction.editReply({
       content: `✅ You’ve been added to the queue${data.subDifficulty ? " for both games!" : "!"}`,
     });
