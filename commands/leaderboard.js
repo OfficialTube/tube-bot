@@ -77,7 +77,7 @@ module.exports = {
           ? `**${position}\\. ${username} — ${weeklyxp} XP**\n`
           : `${position}\\. ${username} — ${weeklyxp} XP\n`;
         
-        leaderboardTextAll += line;
+        leaderboardTextWeekly += line;
       }
       
       if (weeklyRank > 5) {
