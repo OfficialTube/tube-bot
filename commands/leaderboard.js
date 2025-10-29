@@ -17,12 +17,23 @@ function formatNumber(n)
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leaderboard")
-    .setDescription("Check the top users on the leaderboard!"),
+    .setDescription("Check the top users on the leaderboard!")
+    .addStringOption(option =>
+      option
+        .setName("type")
+        .setDescription("Choose which leaderboard to view")
+        .setRequired(false)
+        .addChoices(
+          { name: "All Time", value: "total" },
+          { name: "This Week", value: "week"}
+        )
+    ),
 
   async execute(interaction) {
     try {
       await interaction.deferReply();
 
+      const type = interaction.options.getString("type");
       const targetUser = interaction.options.getUser("user") || interaction.user;
       const userId = targetUser.id;
       const guildId = interaction.guild.id;
@@ -30,13 +41,42 @@ module.exports = {
       const user = await User.findOne({ userId, guildId });
 
       const allUsers = await User.find({guildId}).sort({totalxp: -1});
+      const allWeeklyUsers = await User.find({guildId, weeklyxp: { $gt: 0 } }).sort({weeklyxp: -1});
+      
       const rank = allUsers.findIndex(u => u.userId === userId) + 1;
+      const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
+
+      if (type === "total" || type === "rank")
+      {
+        const isWeekly = type === "week";
+        const users = isWeekly ? allWeeklyUsers : allUsers;
+        const top10 = users.slice(0, 10);
+        const categoryName = isWeekly ? "This Week" : "All Time";
+
+        let leaderboardText = `## **__Top 10 - ${categoryName}__**\n\n`;
+
+        for (let i = 0; i < top10.length; i++)
+        {
+          const u = top10[i];
+          const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
+          const xp = formatNumber(isWeekly ? u.weeklyxp : u.totalxp);
+
+          leaderboardText += `${i + 1}. ${u.userId === userId ? `**${username} — ${xp} XP**` : `${username} — ${xp} XP`}\n`
+        }
+
+        if (users.findIndex(u => u.userId === userId) >= 10)
+        {
+          const xp = formatNumber(isWeekly ? user.weeklyxp : user.totalxp);
+          const r = isWeekly ? weeklyRank : rank;
+          leaderboardText += `**${r}. ${targetUser.username} — ${xp} XP**`;
+        }
+
+        return interaction.editReply({content: leaderboardText });
+      }
       const totalUsers = allUsers.length;
 
       const top5all = allUsers.slice(0, 5);
 
-      const allWeeklyUsers = await User.find({guildId, weeklyxp: { $gt: 0 } }).sort({weeklyxp: -1});
-      const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
       const totalWeeklyUsers = allWeeklyUsers.length;
 
       const top5weekly = allWeeklyUsers.slice(0, 5);
