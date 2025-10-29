@@ -18,10 +18,10 @@ async function handleViewerGamesQueueInteractions(interaction) {
   if (interaction.customId === "queue_difficulty") {
     const diff = interaction.values[0];
     userSelections.set(userId, { difficulty: diff });
-    await interaction.reply({
+    /*await interaction.update({
       content: `Selected: **${difficultyLabels[diff]}**.\nClick **Next** when ready.`,
       ephemeral: true,
-    });
+    });*/
   }
 
   if (interaction.customId === "queue_next") {
@@ -55,7 +55,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
       const row = new ActionRowBuilder().addComponents(subMenu);
       const buttonRow = new ActionRowBuilder().addComponents(nextSubButton);
 
-      return interaction.reply({
+      return interaction.update({
         content:
           "Since you're a **Twitch Subscriber**, you get to play **2 additional games!**\nSelect your **bonus difficulty** below, then click **Next**.",
         components: [row, buttonRow],
@@ -69,7 +69,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
         .setStyle(ButtonStyle.Primary);
       const row = new ActionRowBuilder().addComponents(confirmButton);
 
-      return interaction.reply({
+      return interaction.update({
         content: `**Selected Difficulty:** ${difficultyLabels[userData.difficulty]}\nClick Confirm to join the queue.`,
         components: [row],
         ephemeral: true,
@@ -83,7 +83,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
     current.subDifficulty = diff;
     userSelections.set(userId, current);
 
-    await interaction.reply({
+    await interaction.update({
       content: `Selected bonus difficulty: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
       ephemeral: true,
     });
@@ -104,7 +104,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
       .setStyle(ButtonStyle.Primary);
     const row = new ActionRowBuilder().addComponents(confirmButton);
 
-    await interaction.reply({
+    await interaction.update({
       content: `**Selected Difficulties:**\n• ${difficultyLabels[data.difficulty]}\n• ${difficultyLabels[data.subDifficulty]}\nClick **Confirm** to join the queue.`,
       components: [row],
       ephemeral: true,
@@ -142,7 +142,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
       await queueGroup.save();
     }
 
-    await interaction.reply({
+    await interaction.update({
       content: `You have been added to the queue${data.subDifficulty ? " for both games" : ""}.`,
       ephemeral: true,
     });
