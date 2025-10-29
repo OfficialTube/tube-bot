@@ -52,7 +52,6 @@ module.exports = {
       await queueChannel.send({
         content:
           '# __Join the Phasmophobia Viewer Games Queue__\n\nSelect which difficulty you would like to play on.',
-        components: [row, buttonRow],
       });
     }, delay);
   },
