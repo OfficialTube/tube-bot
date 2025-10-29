@@ -1,142 +1,155 @@
 const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const ViewerQueue = require('../models/ViewerQueue');
 
-const userSelections = new Map();
+const userSelections = new Map(); 
+
 const difficultyLabels = {
-    '1': 'Professional',
-    '2': 'Nightmare',
-    '3': '0 Sanity, 0 Evidence',
+  "1": "Professional",
+  "2": "Nightmare",
+  "3": "0 Sanity, 0 Evidence",
 };
 
-async function handleViewerGamesQueueInteractions(interaction) 
-{
+async function handleViewerGamesQueueInteractions(interaction) {
   if (!interaction.isButton() && !interaction.isStringSelectMenu()) return;
 
-  if (interaction.customId === 'queue_next_page') 
-    {
-    const twitchSubRoleId = '1422737505257783447';
+  const userId = interaction.user.id;
+  const username = interaction.user.username;
+
+  if (interaction.customId === "queue_difficulty") {
+    const diff = interaction.values[0];
+    userSelections.set(userId, { difficulty: diff });
+    await interaction.reply({
+      content: `Selected: **${difficultyLabels[diff]}**.\nClick **Next** when ready.`,
+      ephemeral: true,
+    });
+  }
+
+  if (interaction.customId === "queue_next") {
+    const userData = userSelections.get(userId);
+    if (!userData || !userData.difficulty) {
+      return interaction.reply({
+        content: "⚠️ Please select a difficulty before clicking Next.",
+        ephemeral: true,
+      });
+    }
+
+    const twitchSubRoleId = "1422737505257783447";
     const hasSub = interaction.member.roles.cache.has(twitchSubRoleId);
 
-    if (hasSub) 
-        {
-      const subDifficultyMenu = new StringSelectMenuBuilder()
-        .setCustomId('sub_queue_difficulty')
-        .setPlaceholder('Select Difficulty')
+    if (hasSub) {
+
+      const subMenu = new StringSelectMenuBuilder()
+        .setCustomId("sub_queue_difficulty")
+        .setPlaceholder("Select your bonus game difficulty")
         .addOptions([
-          { label: 'Professional', value: '1' },
-          { label: 'Nightmare', value: '2' },
-          { label: '0 Sanity, 0 Evidence', value: '3' },
+          { label: "Professional", value: "1" },
+          { label: "Nightmare", value: "2" },
+          { label: "0 Sanity, 0 Evidence", value: "3" },
         ]);
-      const row = new ActionRowBuilder().addComponents(subDifficultyMenu);
 
-      await interaction.reply({
-        content: 'Since you are a Twitch Subscriber, you get to play 2 additional games! Which difficulty would you like to do for your additional games?',
-        components: [row],
+      const nextSubButton = new ButtonBuilder()
+        .setCustomId("queue_next_sub")
+        .setLabel("Next")
+        .setStyle(ButtonStyle.Success);
+
+      const row = new ActionRowBuilder().addComponents(subMenu);
+      const buttonRow = new ActionRowBuilder().addComponents(nextSubButton);
+
+      return interaction.reply({
+        content:
+          "Since you're a **Twitch Subscriber**, you get to play **2 additional games!**\nSelect your **bonus difficulty** below, then click **Next**.",
+        components: [row, buttonRow],
         ephemeral: true,
       });
     } else {
-      const queueConfirmButton = new ButtonBuilder()
-        .setCustomId('queue_confirm')
-        .setLabel('Submit')
+
+      const confirmButton = new ButtonBuilder()
+        .setCustomId("queue_confirm")
+        .setLabel("Confirm")
         .setStyle(ButtonStyle.Primary);
-      const row = new ActionRowBuilder().addComponents(queueConfirmButton);
+      const row = new ActionRowBuilder().addComponents(confirmButton);
 
-      await interaction.reply({
-        content: 'Please confirm to join the queue.',
+      return interaction.reply({
+        content: `**Selected Difficulty:** ${difficultyLabels[userData.difficulty]}\nClick Confirm to join the queue.`,
         components: [row],
         ephemeral: true,
       });
     }
   }
 
-  if (interaction.customId === 'queue_difficulty') {
+  if (interaction.customId === "sub_queue_difficulty") {
     const diff = interaction.values[0];
-    const diffLabel = difficultyLabels[diff] || 'Unknown';
-    userSelections.set(interaction.user.id, diff);
+    const current = userSelections.get(userId) || {};
+    current.subDifficulty = diff;
+    userSelections.set(userId, current);
 
-    const confirmButton = new ButtonBuilder()
-      .setCustomId('queue_confirm')
-      .setLabel('Submit')
-      .setStyle(ButtonStyle.Primary);
-    const row = new ActionRowBuilder().addComponents(confirmButton);
-
-    await interaction.update({
-      content: `Selected: ${diffLabel}\nPlease confirm to join the queue.`,
-      components: [row],
+    await interaction.reply({
+      content: `Selected bonus difficulty: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
+      ephemeral: true,
     });
   }
 
-  if (interaction.customId === 'sub_queue_difficulty') {
-    const diff = interaction.values[0];
-    const diffLabel = difficultyLabels[diff] || "Unknown";
-    userSelections.set(interaction.user.id, diff);
-
-    const confirmButton = new ButtonBuilder()
-      .setCustomId('queue_confirm')
-      .setLabel('Submit')
-      .setStyle(ButtonStyle.Primary);
-    const row = new ActionRowBuilder().addComponents(confirmButton);
-
-    await interaction.update({
-      content: `Selected: ${diffLabel}\nPlease confirm to join the queue.`,
-      components: [row],
-    });
-  }
-
-  if (interaction.customId === 'queue_confirm') {
-    const userId = interaction.user.id;
-    const username = interaction.user.username;
-    const difficulty = userSelections.get(userId); 
-
-    if (!difficulty) {
-      return interaction.update({
-        content: 'Something went wrong — please select a difficulty first.',
-        components: [],
+  if (interaction.customId === "queue_next_sub") {
+    const data = userSelections.get(userId);
+    if (!data || !data.difficulty || !data.subDifficulty) {
+      return interaction.reply({
+        content: "⚠️ Please make sure you've selected both difficulties first.",
+        ephemeral: true,
       });
     }
 
-    let queueGroup = await ViewerQueue.findOne({ difficulty, isFull: false });
+    const confirmButton = new ButtonBuilder()
+      .setCustomId("queue_confirm")
+      .setLabel("Confirm")
+      .setStyle(ButtonStyle.Primary);
+    const row = new ActionRowBuilder().addComponents(confirmButton);
 
-    if (!queueGroup) {
-      queueGroup = new ViewerQueue({ difficulty, players: [] });
-    }
-
-    const alreadyInGroup = queueGroup.players.some(p => p.id === userId);
-    if (alreadyInGroup) {
-    const otherGroup = await ViewerQueue.findOne({
-        difficulty,
-        isFull: false,
-        _id: { $ne: queueGroup._id }
+    await interaction.reply({
+      content: `**Selected Difficulties:**\n• ${difficultyLabels[data.difficulty]}\n• ${difficultyLabels[data.subDifficulty]}\nClick **Confirm** to join the queue.`,
+      components: [row],
+      ephemeral: true,
     });
+  }
 
-    if (otherGroup) {
-        queueGroup = otherGroup;
-    } else {
-        queueGroup = new ViewerQueue({ difficulty, players: [] });
-    }
-    }
-
-    queueGroup.players.push({ id: userId, username });
-
-    if (queueGroup.players.length >= 3) {
-      queueGroup.isFull = true;
+  if (interaction.customId === "queue_confirm") {
+    const data = userSelections.get(userId);
+    if (!data || !data.difficulty) {
+      return interaction.reply({
+        content: "No difficulty selection found.",
+        ephemeral: true,
+      });
     }
 
-    await queueGroup.save();
+    const allDiffs = [data.difficulty];
+    if (data.subDifficulty) allDiffs.push(data.subDifficulty);
 
-    if (queueGroup.isFull) {
-      const allQueues = await ViewerQueue.find().sort({ createdAt: 1 });
-      const others = allQueues.filter((q) => q.id !== queueGroup.id);
-      const reordered = [queueGroup, ...others];
+    for (const diff of allDiffs) {
+      let queueGroup = await ViewerQueue.findOne({ difficulty: diff, isFull: false });
+
+      if (queueGroup && queueGroup.players.some((p) => p.id === userId)) {
+        const otherGroup = await ViewerQueue.findOne({
+          difficulty: diff,
+          isFull: false,
+          _id: { $ne: queueGroup._id },
+        });
+        queueGroup = otherGroup || new ViewerQueue({ difficulty: diff, players: [] });
+      }
+
+      if (!queueGroup) queueGroup = new ViewerQueue({ difficulty: diff, players: [] });
+      queueGroup.players.push({ id: userId, username });
+
+      if (queueGroup.players.length >= 3) queueGroup.isFull = true;
+      await queueGroup.save();
     }
+
+    await interaction.reply({
+      content: `You have been added to the queue${data.subDifficulty ? " for both games" : ""}.`,
+      ephemeral: true,
+    });
 
     userSelections.delete(userId);
-
-    await interaction.update({
-      content: 'You have been added to the queue.',
-      components: [],
-    });
   }
 }
 
 module.exports = { handleViewerGamesQueueInteractions };
+
