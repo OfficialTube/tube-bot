@@ -61,14 +61,14 @@ module.exports = {
           const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
           const xp = formatNumber(isWeekly ? u.weeklyxp : u.totalxp);
 
-          leaderboardText += `${i + 1}. ${u.userId === userId ? `**${username} — ${xp} XP**` : `${username} — ${xp} XP`}\n`
+          leaderboardText += `${i + 1}\\. ${u.userId === userId ? `**${username} — ${xp} XP**` : `${username} — ${xp} XP`}\n`
         }
 
         if (users.findIndex(u => u.userId === userId) >= 10)
         {
           const xp = formatNumber(isWeekly ? user.weeklyxp : user.totalxp);
           const r = isWeekly ? weeklyRank : rank;
-          leaderboardText += `**${r}. ${targetUser.username} — ${xp} XP**`;
+          leaderboardText += `**${r}\\. ${targetUser.username} — ${xp} XP**`;
         }
 
         return interaction.editReply({content: leaderboardText });
