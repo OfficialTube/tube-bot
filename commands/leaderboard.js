@@ -102,7 +102,7 @@ module.exports = {
       if (rank > 5) {
         const username = (await interaction.client.users.fetch(userId)).username;
         const xp = formatNumber(user.totalxp);
-        leaderboardTextAll += `**${rank}\\. ${username} — ${xp} XP**`;
+        leaderboardTextAll += `**${rank}\\. ${username} — ${xp} XP**\n`;
       }
 
       for (let i = 0; i < top5weekly.length; i++) {
