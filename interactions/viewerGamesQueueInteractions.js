@@ -64,7 +64,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
       const row = new ActionRowBuilder().addComponents(subMenu);
 
 
-      await interaction.deferReply({ ephemeral: true });
       return interaction.editReply({
         content:
           "🎉 Since you're a **Twitch Subscriber**, you get to play **2 extra games!**\nSelect your **bonus difficulty** below, then click **Next**.",
@@ -80,7 +79,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     const row = new ActionRowBuilder().addComponents(confirmButton);
 
-    await interaction.deferReply({ ephemeral: true });
     return interaction.editReply({
       content: `**Selected Difficulty:** ${difficultyLabels[userData.difficulty]}\nClick **Confirm** to join the queue.`,
       components: [row],
@@ -98,9 +96,10 @@ async function handleViewerGamesQueueInteractions(interaction) {
     .setLabel("Next")
     .setStyle(ButtonStyle.Success);
     const buttonRow = new ActionRowBuilder().addComponents(nextSubButton);
-    await interaction.editReply({
+    await interaction.reply({
       content: `Selected bonus difficulty: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
       components: [buttonRow],
+      ephemeral: true,
     });
   }
 
