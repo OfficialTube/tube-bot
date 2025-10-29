@@ -41,8 +41,8 @@ module.exports = {
 
       const top5weekly = allWeeklyUsers.slice(0, 5);
 
-      let leaderboardTextAll = `# **__Top 5 Leaderboard: All Time__**\n\n`;
-      let leaderboardTextWeekly =  `\n# **__Top 5 Leaderboard: This Week__**\n\n`;
+      let leaderboardTextAll = `## **__All Time__**\n\n`;
+      let leaderboardTextWeekly =  `## **__This Week__**\n\n`;
 
       for (let i = 0; i < top5all.length; i++) {
         const u = top5all[i];
@@ -86,7 +86,7 @@ module.exports = {
         leaderboardTextWeekly += `**${weeklyRank}\\. ${username} — ${weeklyxp} XP**`;
       }
 
-      let leaderboardText = leaderboardTextAll + leaderboardTextWeekly;
+      let leaderboardText = '# Top 5 Leaderboards\n' + leaderboardTextAll + leaderboardTextWeekly;
 
       return interaction.editReply({
         content: leaderboardText 
