@@ -22,9 +22,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
     const diff = interaction.values[0];
     userSelections.set(userId, { difficulty: diff });
 
-    // Start private ephemeral flow
-    await interaction.deferReply({ ephemeral: true });
-
     const nextButton = new ButtonBuilder()
       .setCustomId("queue_next")
       .setLabel("Next")
@@ -32,9 +29,10 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     const buttonRow = new ActionRowBuilder().addComponents(nextButton);
 
-    await interaction.editReply({
+    return interaction.reply({
       content: `You selected: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
       components: [buttonRow],
+      ephemeral: true,
     });
   }
 
@@ -50,8 +48,8 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     const hasSub = interaction.member.roles.cache.has(twitchSubRoleId);
 
-    // If subscriber → bonus game flow
     if (hasSub) {
+      // Subscriber bonus game flow
       const subMenu = new StringSelectMenuBuilder()
         .setCustomId("sub_queue_difficulty")
         .setPlaceholder("Select your bonus game difficulty")
@@ -63,26 +61,25 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
       const row = new ActionRowBuilder().addComponents(subMenu);
 
-
-      await interaction.editReply({
+      return interaction.update({
         content:
           "🎉 Since you're a **Twitch Subscriber**, you get to play **2 extra games!**\nSelect your **bonus difficulty** below, then click **Next**.",
         components: [row],
       });
+    } else {
+      // Non-subscriber → confirm single difficulty
+      const confirmButton = new ButtonBuilder()
+        .setCustomId("queue_confirm")
+        .setLabel("Confirm")
+        .setStyle(ButtonStyle.Primary);
+
+      const row = new ActionRowBuilder().addComponents(confirmButton);
+
+      return interaction.update({
+        content: `**Selected Difficulty:** ${difficultyLabels[userData.difficulty]}\nClick **Confirm** to join the queue.`,
+        components: [row],
+      });
     }
-
-    // Non-subscriber flow → confirm single difficulty
-    const confirmButton = new ButtonBuilder()
-      .setCustomId("queue_confirm")
-      .setLabel("Confirm")
-      .setStyle(ButtonStyle.Primary);
-
-    const row = new ActionRowBuilder().addComponents(confirmButton);
-
-    return interaction.editReply({
-      content: `**Selected Difficulty:** ${difficultyLabels[userData.difficulty]}\nClick **Confirm** to join the queue.`,
-      components: [row],
-    });
   }
 
   // STEP 3 — subscriber selects bonus difficulty
@@ -91,15 +88,17 @@ async function handleViewerGamesQueueInteractions(interaction) {
     const current = userSelections.get(userId) || {};
     current.subDifficulty = diff;
     userSelections.set(userId, current);
+
     const nextSubButton = new ButtonBuilder()
-    .setCustomId("queue_next_sub")
-    .setLabel("Next")
-    .setStyle(ButtonStyle.Success);
+      .setCustomId("queue_next_sub")
+      .setLabel("Next")
+      .setStyle(ButtonStyle.Success);
+
     const buttonRow = new ActionRowBuilder().addComponents(nextSubButton);
-    await interaction.reply({
+
+    return interaction.update({
       content: `Selected bonus difficulty: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
       components: [buttonRow],
-      ephemeral: true,
     });
   }
 
@@ -120,7 +119,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     const row = new ActionRowBuilder().addComponents(confirmButton);
 
-    return interaction.editReply({
+    return interaction.update({
       content: `**Selected Difficulties:**\n• ${difficultyLabels[data.difficulty]}\n• ${difficultyLabels[data.subDifficulty]}\nClick **Confirm** to join the queue.`,
       components: [row],
     });
@@ -159,11 +158,12 @@ async function handleViewerGamesQueueInteractions(interaction) {
       await queueGroup.save();
     }
 
-    await interaction.editReply({
-      content: `✅ You’ve been added to the queue${data.subDifficulty ? " for both games!" : "!"}`,
-    });
-
     userSelections.delete(userId);
+
+    return interaction.update({
+      content: `✅ You’ve been added to the queue${data.subDifficulty ? " for both games!" : "!"}`,
+      components: [],
+    });
   }
 }
 
