@@ -99,7 +99,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
     current.subDifficulty = diff;
     userSelections.set(userId, current);
 
-    return interaction.editReply({
+    await interaction.editReply({
       content: `Selected bonus difficulty: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
       components: [buttonRow],
     });
