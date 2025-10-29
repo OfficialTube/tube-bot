@@ -61,13 +61,8 @@ async function handleViewerGamesQueueInteractions(interaction) {
           { label: "0 Sanity, 0 Evidence", value: "3" },
         ]);
 
-      const nextSubButton = new ButtonBuilder()
-        .setCustomId("queue_next_sub")
-        .setLabel("Next")
-        .setStyle(ButtonStyle.Success);
-
       const row = new ActionRowBuilder().addComponents(subMenu);
-      const buttonRow = new ActionRowBuilder().addComponents(nextSubButton);
+
 
       await interaction.deferReply({ ephemeral: true });
       return interaction.editReply({
@@ -98,7 +93,11 @@ async function handleViewerGamesQueueInteractions(interaction) {
     const current = userSelections.get(userId) || {};
     current.subDifficulty = diff;
     userSelections.set(userId, current);
-
+    const nextSubButton = new ButtonBuilder()
+    .setCustomId("queue_next_sub")
+    .setLabel("Next")
+    .setStyle(ButtonStyle.Success);
+    const buttonRow = new ActionRowBuilder().addComponents(nextSubButton);
     await interaction.editReply({
       content: `Selected bonus difficulty: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`,
       components: [buttonRow],
