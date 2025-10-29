@@ -64,7 +64,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
       const row = new ActionRowBuilder().addComponents(subMenu);
 
 
-      return interaction.editReply({
+      await interaction.editReply({
         content:
           "🎉 Since you're a **Twitch Subscriber**, you get to play **2 extra games!**\nSelect your **bonus difficulty** below, then click **Next**.",
         components: [row],
