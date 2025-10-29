@@ -46,7 +46,7 @@ module.exports = {
       const rank = allUsers.findIndex(u => u.userId === userId) + 1;
       const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
 
-      if (type === "total" || type === "rank")
+      if (type === "total" || type === "week")
       {
         const isWeekly = type === "week";
         const users = isWeekly ? allWeeklyUsers : allUsers;
