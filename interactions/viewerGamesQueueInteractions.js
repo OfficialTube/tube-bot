@@ -2,6 +2,11 @@ const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } 
 const ViewerQueue = require('../models/ViewerQueue');
 
 const userSelections = new Map();
+const difficultyLabels = {
+    '1': 'Professional',
+    '2': 'Nightmare',
+    '3': '0 Sanity, 0 Evidence',
+};
 
 async function handleViewerGamesQueueInteractions(interaction) 
 {
@@ -46,6 +51,7 @@ async function handleViewerGamesQueueInteractions(interaction)
 
   if (interaction.customId === 'queue_difficulty') {
     const diff = interaction.values[0];
+    const diffLabel = difficultyLabels[diff] || 'Unknown';
     userSelections.set(interaction.user.id, diff);
 
     const confirmButton = new ButtonBuilder()
@@ -55,13 +61,14 @@ async function handleViewerGamesQueueInteractions(interaction)
     const row = new ActionRowBuilder().addComponents(confirmButton);
 
     await interaction.update({
-      content: `Selected: ${diff}\nPlease confirm to join the queue.`,
+      content: `Selected: ${diffLabel}\nPlease confirm to join the queue.`,
       components: [row],
     });
   }
 
   if (interaction.customId === 'sub_queue_difficulty') {
     const diff = interaction.values[0];
+    const diffLabel = difficultyLabels[diff] || "Unknown";
     userSelections.set(interaction.user.id, diff);
 
     const confirmButton = new ButtonBuilder()
@@ -71,7 +78,7 @@ async function handleViewerGamesQueueInteractions(interaction)
     const row = new ActionRowBuilder().addComponents(confirmButton);
 
     await interaction.update({
-      content: `Selected: ${diff}\nPlease confirm to join the queue.`,
+      content: `Selected: ${diffLabel}\nPlease confirm to join the queue.`,
       components: [row],
     });
   }

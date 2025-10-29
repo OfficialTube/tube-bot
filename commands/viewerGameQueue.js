@@ -49,7 +49,7 @@ module.exports = {
     const row = new ActionRowBuilder().addComponents(difficultyMenu);
 
     const nextButton = new ButtonBuilder()
-      .setCustomId('queue_next')
+      .setCustomId('queue_next_page')
       .setLabel('Next')
       .setStyle(ButtonStyle.Success);
 
