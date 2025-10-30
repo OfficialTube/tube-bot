@@ -44,6 +44,16 @@ module.exports = async () => {
   mongoose.connection.on("error", (err) => {
     console.error("❌ MongoDB error:", err);
     logOffline("❌ MongoDB error");
+    setTimeout(async () => {
+      try {
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log("✅ MongoDB reconnected successfully.");
+        logOffline("✅ MongoDB reconnected successfully.");
+      } catch (err) {
+        console.error("❌ MongoDB reconnection failed:", err);
+        logOFfline("❌ MongoDB reconnection failed");
+      }
+    }, 5000);
     if (err.message.includes("tlsv1 alert internal error") || err.message.includes("MongoServerSelectionError")) {
     console.log("Restarting bot to fix MongoDB connection...");
     logOffline("Restarting bot to fix MongoDB connection...");
