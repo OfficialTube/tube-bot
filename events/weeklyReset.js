@@ -50,30 +50,26 @@ module.exports = (client) => {
         } else if (i === 2) {
           bonusPxp = Math.floor(weeklyVisible / 5);
         }
-        async function handleMessageXP(message) {
-          if (message.author.bot || !message.guild) {
-            return { user: null, leveledUp: false };
-          }
-          user.pxp = (user.pxp || 0) + bonusPxp;
-          while (user.pxp >= 10)
-          {
-            user.pxp -= 10;
-            user.xp++
-            user.totalxp++;
-            user.money++;
-          }
 
-          let leveledUp = false;
-          while (user.xp >= user.levelxp) {
-            user.xp -= user.levelxp;
-            user.level++;
-            user.money += (user.level * 10);
-            user.levelxp += user.level;
-            leveledUp = true;
-          }
-          await user.save();
-          return { user, leveledUp };
+        user.pxp = (user.pxp || 0) + bonusPxp;
+        while (user.pxp >= 10)
+        {
+          user.pxp -= 10;
+          user.xp++
+          user.totalxp++;
+          user.money++;
         }
+
+        let leveledUp = false;
+        while (user.xp >= user.levelxp) {
+          user.xp -= user.levelxp;
+          user.level++;
+          user.money += (user.level * 10);
+          user.levelxp += user.level;
+          leveledUp = true;
+        }
+
+
         const visibleBonus = Math.floor(bonusPxp / 10);
 
         user.weeklyxp = 0;
@@ -113,8 +109,4 @@ module.exports = (client) => {
       console.error('Weekly reset failed:', err);
     }
   });
-};
-
-module.exports = {
-  handleMessageXP,
 };

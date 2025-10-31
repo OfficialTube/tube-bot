@@ -172,31 +172,25 @@ module.exports = {
                             user.streakBest = user.streakCurrent;
                         }
                         user.points += (points * streak);
-                        async function handleMessageXP(message) {
-                            if (message.author.bot || !message.guild) {
-                                return { user: null, leveledUp: false };
-                            }
-                            user.pxp += 15;
-                            while (user.pxp >= 10)
-                            {
-                            user.pxp -= 10;
-                            user.xp++
-                            user.totalxp++;
-                            user.weeklyxp++;
-                            user.money++;
-                            }
-
-                            let leveledUp = false;
-                            while (user.xp >= user.levelxp) {
-                            user.xp -= user.levelxp;
-                            user.level++;
-                            user.money += (user.level * 10);
-                            user.levelxp += user.level;
-                            leveledUp = true;
-                            }
-                            await user.save();
-                            return {user, leveledUp};
+                        user.pxp += 15
+                        while (user.pxp >= 10)
+                        {
+                        user.pxp -= 10;
+                        user.xp++
+                        user.totalxp++;
+                        user.weeklyxp++;
+                        user.money++;
                         }
+
+                        let leveledUp = false;
+                        while (user.xp >= user.levelxp) {
+                        user.xp -= user.levelxp;
+                        user.level++;
+                        user.money += (user.level * 10);
+                        user.levelxp += user.level;
+                        leveledUp = true;
+                        }
+                        await user.save();
                     }
 
                 else if (playerTotal > 21) 
@@ -235,31 +229,26 @@ module.exports = {
                         user.streakBest = user.streakCurrent;
                     }
                     user.points += (points * streak);
-                    async function handleMessageXP(message) {
-                        if (message.author.bot || !message.guild) {
-                            return { user: null, leveledUp: false };
-                        }
-                        user.pxp += 10;
-                        while (user.pxp >= 10)
-                            {
-                            user.pxp -= 10;
-                            user.xp++
-                            user.totalxp++;
-                            user.weeklyxp++;
-                            user.money++;
-                            }
-
-                            let leveledUp = false;
-                            while (user.xp >= user.levelxp) {
-                            user.xp -= user.levelxp;
-                            user.level++;
-                            user.money += (user.level * 10);
-                            user.levelxp += user.level;
-                            leveledUp = true;
-                            }
-                        await user.save();
-                        return { user, leveledUp};
+                    user.pxp += 10;
+                    while (user.pxp >= 10)
+                    {
+                    user.pxp -= 10;
+                    user.xp++
+                    user.totalxp++;
+                    user.weeklyxp++;
+                    user.money++;
                     }
+
+                    let leveledUp = false;
+                    while (user.xp >= user.levelxp) {
+                    user.xp -= user.levelxp;
+                    user.level++;
+                    user.money += (user.level * 10);
+                    user.levelxp += user.level;
+                    leveledUp = true;
+                    }
+                    await user.save();
+
                 }
                 else if (playerTotal < dealerTotal) 
                 {
@@ -314,8 +303,4 @@ module.exports = {
             }
         });
     }
-};
-
-module.exports = {
-    handleMessageXP,
 };
