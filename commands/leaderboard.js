@@ -43,7 +43,7 @@ module.exports = {
 
       const allUsers = await User.find({guildId}).sort({totalxp: -1});
       const allWeeklyUsers = await User.find({guildId, weeklyxp: { $gt: 0 } }).sort({weeklyxp: -1});
-      const allBlackjackUsers = await User.find({guildId, points: { $gt: 0 } }).sort({points: -1});
+      const allBlackjackUsers = await User.find({guildId, rounds: { $gt: 0 } }).sort({points: -1});
       
       const rank = allUsers.findIndex(u => u.userId === userId) + 1;
       const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
@@ -166,7 +166,7 @@ module.exports = {
         const position = i + 1;
       
         const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
-        const blackjack = formatNumber(u.points);
+        const points = formatNumber(u.points);
       
         const isSender = u.userId === userId;
         const line = isSender

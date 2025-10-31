@@ -68,7 +68,7 @@ module.exports = {
       const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
       const totalWeeklyUsers = allWeeklyUsers.length;
 
-      const allBlackjackUsers = await User.find({guildId, points: { $gt: 0 } }).sort({points: -1});
+      const allBlackjackUsers = await User.find({guildId, rounds: { $gt: 0 } }).sort({points: -1});
       const blackjackPoints = allBlackjackUsers.findIndex(u => u.userId === userId) + 1;
       const totalBlackjackUsers = allBlackjackUsers.length;
 
