@@ -64,14 +64,14 @@ module.exports = {
           const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
           const xp = formatNumber(isWeekly ? u.weeklyxp : u.totalxp);
 
-          leaderboardText += `${i + 1}\\. ${u.userId === userId ? `**${username} — ${xp} XP**` : `${username} — ${xp} XP`}\n`
+          leaderboardText += `${i + 1}\\. ${u.userId === userId ? `**${username} | ${xp} XP**` : `${username} | ${xp} XP`}\n`
         }
 
         if (users.findIndex(u => u.userId === userId) >= 10)
         {
           const xp = formatNumber(isWeekly ? user.weeklyxp : user.totalxp);
           const r = isWeekly ? weeklyRank : rank;
-          leaderboardText += `**${r}\\. ${targetUser.username} — ${xp} XP**`;
+          leaderboardText += `**${r}\\. ${targetUser.username} | ${xp} XP**`;
         }
 
         return interaction.editReply({content: leaderboardText });
@@ -81,7 +81,7 @@ module.exports = {
         const isBlackjack = "blackjack";
         const users = isBlackjack ? allBlackjackUsers : null;
         const top10 = users.slice(0, 10);
-        const categoryName = isBlackJack ? "Blackjack" : null;
+        const categoryName = isBlackjack ? "Blackjack" : null;
 
         let leaderboardText = `## **__Top 10 - ${categoryName}__**\n\n`;
 
@@ -91,14 +91,14 @@ module.exports = {
           const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
           const xp = formatNumber(isBlackjack ? u.points : null);
 
-          leaderboardText += `${i + 1}\\. ${u.userId === userId ? `**${username} — ${xp} Points**` : `${username} — ${xp} Points`}\n`
+          leaderboardText += `${i + 1}\\. ${u.userId === userId ? `**${username} | ${xp} Points**` : `${username} | ${xp} Points`}\n`
         }
 
         if (users.findIndex(u => u.userId === userId) >= 10)
         {
           const xp = formatNumber(isBlackjack ? user.points : null);
           const r = isBlackjack ? blackjackPoints : null;
-          leaderboardText += `**${r}\\. ${targetUser.username} — ${xp} Points**`;
+          leaderboardText += `**${r}\\. ${targetUser.username} | ${xp} Points**`;
         }
 
         return interaction.editReply({content: leaderboardText });
@@ -128,8 +128,8 @@ module.exports = {
       
         const isSender = u.userId === userId;
         const line = isSender
-          ? `**${position}\\. ${username} — ${xp} XP**\n`
-          : `${position}\\. ${username} — ${xp} XP\n`;
+          ? `**${position}\\. ${username} | ${xp} XP**\n`
+          : `${position}\\. ${username} | ${xp} XP\n`;
         
         leaderboardTextAll += line;
       }
@@ -137,7 +137,7 @@ module.exports = {
       if (rank > 5) {
         const username = (await interaction.client.users.fetch(userId)).username;
         const xp = formatNumber(user.totalxp);
-        leaderboardTextAll += `**${rank}\\. ${username} — ${xp} XP**\n`;
+        leaderboardTextAll += `**${rank}\\. ${username} | ${xp} XP**\n`;
       }
 
       for (let i = 0; i < top5weekly.length; i++) {
@@ -149,8 +149,8 @@ module.exports = {
       
         const isSender = u.userId === userId;
         const line = isSender
-          ? `**${position}\\. ${username} — ${weeklyxp} XP**\n`
-          : `${position}\\. ${username} — ${weeklyxp} XP\n`;
+          ? `**${position}\\. ${username} | ${weeklyxp} XP**\n`
+          : `${position}\\. ${username} | ${weeklyxp} XP\n`;
         
         leaderboardTextWeekly += line;
       }
@@ -158,7 +158,7 @@ module.exports = {
       if (weeklyRank > 5) {
         const username = (await interaction.client.users.fetch(userId)).username;
         const weeklyxp = formatNumber(user.weeklyxp);
-        leaderboardTextWeekly += `**${weeklyRank}\\. ${username} — ${weeklyxp} XP**`;
+        leaderboardTextWeekly += `**${weeklyRank}\\. ${username} | ${weeklyxp} XP**`;
       }
 
       for (let i = 0; i < top5BlackjackUsers.length; i++) {
@@ -170,8 +170,8 @@ module.exports = {
       
         const isSender = u.userId === userId;
         const line = isSender
-          ? `**${position}\\. ${username} — ${points} Points**\n`
-          : `${position}\\. ${username} — ${points} Points\n`;
+          ? `**${position}\\. ${username} | ${points} Points**\n`
+          : `${position}\\. ${username} | ${points} Points\n`;
         
         leaderboardTextBlackjack += line;
       }
@@ -179,7 +179,7 @@ module.exports = {
       if (blackjackPoints > 5) {
         const username = (await interaction.client.users.fetch(userId)).username;
         const points = formatNumber(user.points);
-        leaderboardTextBlackjack += `**${blackjackPoints}\\. ${username} — ${points} Points**`;
+        leaderboardTextBlackjack += `**${blackjackPoints}\\. ${username} | ${points} Points**`;
       }
 
       let leaderboardText = '# Top 5 Leaderboards\n' + leaderboardTextAll + leaderboardTextWeekly + leaderboardTextBlackjack;
