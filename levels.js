@@ -22,6 +22,17 @@ async function handleMessageXP(message) {
         lastmsg: 0,
         weeklyxp: 0,
         money: 0,
+        wins: 0,
+        blackjacks: 0,
+        losses: 0,
+        ties: 0,
+        rounds: 0,
+        moneyLost: 0,
+        moneyGained: 0,
+        moneyNet: 0,
+        streakCurrent: 0,
+        streakBest: 0,
+        points: 0,
       });
     }
 

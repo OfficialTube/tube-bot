@@ -31,7 +31,7 @@ module.exports = async () => {
         logOffline("✅ MongoDB reconnected successfully.");
       } catch (err) {
         console.error("❌ MongoDB reconnection failed:", err);
-        logOFfline("❌ MongoDB reconnection failed");
+        logOffline("❌ MongoDB reconnection failed");
       }
     }, 5000);
   });
@@ -51,7 +51,7 @@ module.exports = async () => {
         logOffline("✅ MongoDB reconnected successfully.");
       } catch (err) {
         console.error("❌ MongoDB reconnection failed:", err);
-        logOFfline("❌ MongoDB reconnection failed");
+        logOffline("❌ MongoDB reconnection failed");
       }
     }, 5000);
     if (err.message.includes("tlsv1 alert internal error") || err.message.includes("MongoServerSelectionError")) {
