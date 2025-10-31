@@ -20,7 +20,19 @@ async function handleMessageXP(message) {
         levelxp: 10,
         totalxp: 0,
         lastmsg: 0,
-        weeklyxp: 0
+        weeklyxp: 0,
+        money: 0,
+        wins: 0,
+        blackjacks: 0,
+        losses: 0,
+        ties: 0,
+        rounds: 0,
+        moneyLost: 0,
+        moneyGained: 0,
+        moneyNet: 0,
+        streakCurrent: 0,
+        streakBest: 0,
+        points: 0,
       });
     }
 
@@ -45,12 +57,14 @@ async function handleMessageXP(message) {
       user.xp++
       user.totalxp++;
       user.weeklyxp++;
+      user.money++;
     }
 
     let leveledUp = false;
     while (user.xp >= user.levelxp) {
       user.xp -= user.levelxp;
       user.level++;
+      user.money += (user.level * 10);
       user.levelxp += user.level;
       leveledUp = true;
     }

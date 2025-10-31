@@ -16,6 +16,15 @@ function formatNumber(n)
   }
 }
 
+function formatMoney(n)
+{
+  if (n == null || isNaN(n)) return "$0";
+  else
+  {
+    return "$" + n.toLocaleString();
+  }
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("rank")
@@ -59,6 +68,10 @@ module.exports = {
       const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
       const totalWeeklyUsers = allWeeklyUsers.length;
 
+      const allBlackjackUsers = await User.find({guildId, rounds: { $gt: 0 } }).sort({points: -1});
+      const blackjackPoints = allBlackjackUsers.findIndex(u => u.userId === userId) + 1;
+      const totalBlackjackUsers = allBlackjackUsers.length;
+
       let weeklyRankDisplay;
       if (!weeklyRank)
       {
@@ -68,8 +81,17 @@ module.exports = {
         weeklyRankDisplay = `Rank: ${formatNumber(weeklyRank)} of ${formatNumber(totalWeeklyUsers)}`;
       }
 
+      let blackjackPointsDisplay;
+      if (!blackjackPoints)
+      {
+        blackjackPointsDisplay = 'Rank: Unranked';
+      } else
+      {
+        blackjackPointsDisplay = `Rank: ${formatNumber(blackjackPoints)} of ${formatNumber(totalBlackjackUsers)}`;
+      }
+
       return interaction.editReply({
-        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}`,
+        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}\n\n**__Blackjack Stats__**\n${blackjackPointsDisplay}\nPoints: ${formatNumber(user.points)}\n\n**__Money:__**\n${formatMoney(user.money)}`,
       });
 
     } catch (err) {

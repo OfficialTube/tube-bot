@@ -48,18 +48,11 @@ module.exports = {
 
     const row = new ActionRowBuilder().addComponents(difficultyMenu);
 
-    const nextButton = new ButtonBuilder()
-      .setCustomId('queue_next')
-      .setLabel('Next')
-      .setStyle(ButtonStyle.Success);
-
-    const buttonRow = new ActionRowBuilder().addComponents(nextButton);
-
     setTimeout(async () => {
       await queueChannel.send({
         content:
           '# __Join the Phasmophobia Viewer Games Queue__\n\nSelect which difficulty you would like to play on.',
-        components: [row, buttonRow],
+        components: [row],
       });
     }, delay);
   },
