@@ -111,7 +111,7 @@ module.exports = {
                 blackjackPointsDisplay = `Rank: ${formatNumber(blackjackPoints)} of ${formatNumber(totalBlackjackUsers)}`;
             }
 
-            return interaction.reply({
+            return interaction.editReply({
                 content: `**__${user.username}'s Blackjack Stats__**\nPoints: ${formatNumber(user.points)}\n${blackjackPointsDisplay}\n\nRounds: ${formatNumber(user.rounds)}\nWon: ${formatNumber(user.wins)} (${formatPercent(user.wins, user.rounds)})\nBlackjacks: ${formatNumber(user.blackjacks)} (${formatPercent(user.blackjacks, user.wins)} of Wins) (${formatPercent(user.blackjacks, user.rounds)} of Total)\nTies: ${formatNumber(user.ties)} (${formatPercent(user.ties, user.rounds)})\nLost: ${formatNumber(user.losses)} (${formatPercent(user.losses, user.rounds)})\nAverage Points Per Round: ${pointsPerRound(user.points, user.rounds)}\n\nMoney Earned: ${formatMoney(user.moneyGained)}\nMoney Lost: ${formatMoney(user.moneyLost)}\nNet Money: ${formatMoneyNet(user.moneyGained, user.moneyLost)}\nAverage Money Per Round: ${moneyPerRound(user.netMoney, user.rounds)}\n\nCurrent Streak: ${user.streakCurrent}\nBest Streak: ${user.streakBest}`
             });
 
