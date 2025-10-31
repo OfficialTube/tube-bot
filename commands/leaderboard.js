@@ -158,7 +158,7 @@ module.exports = {
       if (weeklyRank > 5) {
         const username = (await interaction.client.users.fetch(userId)).username;
         const weeklyxp = formatNumber(user.weeklyxp);
-        leaderboardTextWeekly += `**${weeklyRank}\\. ${username} | ${weeklyxp} XP**`;
+        leaderboardTextWeekly += `**${weeklyRank}\\. ${username} | ${weeklyxp} XP**\n`;
       }
 
       for (let i = 0; i < top5BlackjackUsers.length; i++) {

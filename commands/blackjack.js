@@ -12,6 +12,70 @@ const Colors = {
 const suits = ["♠", "♥", "♦", "♣"];
 const values = ["A","2","3","4","5","6","7","8","9","10","J","Q","K"];
 
+function formatNumber(n)
+{
+  if (n == null || isNaN(n)) return "0";
+  if (n >= 10_000)
+  {
+    return (n / 1_000).toFixed(3).replace(/\.?0+$/, "") + "k";
+  } 
+  else
+  {
+    return n.toLocaleString();
+  }
+}
+
+function formatMoney(n)
+{
+  if (n == null || isNaN(n)) return "$0";
+  else
+  {
+    return "$" + n.toLocaleString();
+  }
+}
+
+function formatMoneyNet(x, y)
+{
+    let netMoney = x - y;
+    if(netMoney > 0)
+    {
+        return "+$" + netMoney.toLocaleString();
+    } else if(netMoney < 0)
+    {
+        netMoney += (netMoney * 2);
+        return "-$" + netMoney.toLocaleString();
+    } else
+    { 
+        return "$" + netMoney.toLocaleString();
+    }
+}
+
+function moneyPerRound(x, y)
+{
+    let n = Math.round(x / y).toFixed(2);
+    if(n > 0)
+    {
+        return "+$" + n.toLocaleString();
+    } else if(n < 0)
+    {
+        n += (n * 2);
+        return "-$" + n.toLocaleString();
+    } else
+    { 
+        return "$" + n.toLocaleString();
+    }
+}
+
+function formatPercent(x, y)
+{
+    return (Math.round((x / y) * 10_000) / 100).toFixed(2) + "%";
+}
+
+function pointsPerRound(x, y)
+{
+    return Math.round(x / y).toFixed(3) + " Points Per Round";
+}
+
 function createDeck() {
     const deck = [];
     for (const suit of suits) for (const value of values) deck.push({ suit, value });
@@ -43,8 +107,52 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("blackjack")
-        .setDescription("Play a game of blackjack!"),
+        .setDescription("Play a game of blackjack!")
+        .addSubcommand(subcommand =>
+        subcommand
+            .setName("stats")
+            .setDescription("Check your Blackjack statistics.")
+            .setRequired(false)
+            .addUserOption(option =>
+                option
+                    .setName("user")
+                    .setDescription("Check the Blackjack statistics for a certain user.")
+                    .setRequired(false)
+            ),
+        ),
     async execute(interaction) {
+        const subcommand = interaction.options.getSubcommand(false);
+
+        if (subcommand === 'stats')
+        {
+            const user = interaction.options.getUser('user') || interaction.user;
+
+            const stats = await User.findOne({userId: user.id});
+
+            if(!stats)
+            {
+                return interaction.reply({
+                    content: `${user.username} has no stats yet.`,
+                    ephemeral: true
+                });
+            }
+            const allBlackjackUsers = await User.find({guildId, rounds: { $gt: 0 } }).sort({points: -1});
+            const blackjackPoints = allBlackjackUsers.findIndex(u => u.userId === userId) + 1;
+            const totalBlackjackUsers = allBlackjackUsers.length;
+            let blackjackPointsDisplay;
+            if (!blackjackPoints)
+            {
+                blackjackPointsDisplay = 'Rank: Unranked';
+            } else
+            {
+                blackjackPointsDisplay = `Rank: ${formatNumber(blackjackPoints)} of ${formatNumber(totalBlackjackUsers)}`;
+            }
+
+            return interaction.reply({
+                content: `**__${user.username}'s Blackjack Stats__**\nPoints: ${formatNumber(user.points)}\n${blackjackPointsDisplay}\n\nRounds: ${formatNumber(user.rounds)}\nWon: ${formatNumber(user.wins)} (${formatPercent(user.wins, user.rounds)})\nBlackjacks: ${formatNumber(user.blackjacks)} (${formatPercent(user.blackjacks, user.wins)} of Wins) (${formatPercent(user.blackjacks, user.rounds)} of Total)\nTies: ${formatNumber(user.ties)} (${formatPercent(user.ties, user.rounds)})\nLost: ${formatNumber(user.losses)} (${formatPercent(user.losses, user.rounds)})\nAverage Points Per Round: ${pointsPerRound(user.points, user.rounds)}\n\nMoney Earned: ${formatMoney(user.moneyGained)}\nMoney Lost: ${formatMoney(user.moneyLost)}\nNet Money: ${formatMoneyNet(user.moneyGained, user.moneyLost)}\nAverage Money Per Round: ${moneyPerRound(user.netMoney, user.rounds)}\n\nCurrent Streak: ${user.streakCurrent}\nBest Streak: ${user.streakBest}`
+            });
+        }
+
         let user = await User.findOne({ userId: interaction.user.id });
 
         if (!user || user.money < 10)
