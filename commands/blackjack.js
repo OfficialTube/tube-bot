@@ -317,5 +317,5 @@ module.exports = {
 };
 
 module.exports = {
-    handleMessageXp,
+    handleMessageXP,
 };

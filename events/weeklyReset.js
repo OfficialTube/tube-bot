@@ -114,3 +114,7 @@ module.exports = (client) => {
     }
   });
 };
+
+module.exports = {
+  handleMessageXP,
+};
