@@ -27,20 +27,20 @@ function formatMoney(n)
   if (n == null || isNaN(n)) return "$0";
   else
   {
-    return moneyFormatter(n);
+    return moneyFormatter.format(n);
   }
 }
 
 function formatMoneyNet(x, y)
 {
     let netMoney = x - y;
-    return moneyFormatter(netMoney);
+    return moneyFormatter.format(netMoney);
 }
 
 function moneyPerRound(x, y)
 {
     let n = x / y;
-    return moneyFormatter(n);
+    return moneyFormatter.format(n);
 }
 
 function formatPercent(x, y)
