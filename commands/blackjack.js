@@ -108,8 +108,8 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("blackjack")
         .setDescription("Play a game of blackjack!")
-        .addStringOption(option =>
-        option
+        .addSubcommand(subcommand =>
+        subcommand
             .setName("stats")
             .setDescription("Check your Blackjack statistics.")
             .setRequired(false)
