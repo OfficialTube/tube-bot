@@ -42,7 +42,7 @@ function formatMoneyNet(x, y)
 
 function moneyPerRound(x, y)
 {
-    let n = Math.round(x / y).toFixed(2);
+    let n = (Math.round((x / y) * 100) / 100).toFixed(2);
     if(n > 0)
     {
         return "+$" + n.toLocaleString();
@@ -63,7 +63,7 @@ function formatPercent(x, y)
 
 function pointsPerRound(x, y)
 {
-    return Math.round((x / y)).toFixed(3) + " Points Per Round";
+    return (Math.round((x / y) * 1000) / 1000).toFixed(3) + " Points Per Round";
 }
 
 module.exports = {
