@@ -91,7 +91,7 @@ module.exports = {
       }
 
       return interaction.editReply({
-        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}\n\n**__Blackjack Stats__**\n${blackjackPointsDisplay}\nMoney: ${formatMoney(user.money)}\n__Wins/Blackjacks/Losses/Ties/Rounds__\n${user.wins}/${user.blackjacks}/${user.losses}/${user.ties}/${user.rounds}\n__Net Money = Money Gained - Money Lost__\n${formatMoney(user.moneyNet)} = ${formatMoney(user.moneyGained)} - ${formatMoney(user.moneyLost)}\n__Current Streak/Best Streak__\n${user.streakCurrent}/${user.streakBest}\nPoints: ${formatNumber(user.points)}`,
+        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}\n\n**__Blackjack Stats__**\n${blackjackPointsDisplay}\nPoints: ${formatNumber(user.points)}\n\n**__Money:__**\n${formatMoney(user.money)}`,
       });
 
     } catch (err) {

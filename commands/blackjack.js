@@ -112,7 +112,6 @@ module.exports = {
         subcommand
             .setName("stats")
             .setDescription("Check your Blackjack statistics.")
-            .setRequired(false)
             .addUserOption(option =>
                 option
                     .setName("user")
