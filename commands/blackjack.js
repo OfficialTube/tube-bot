@@ -118,7 +118,7 @@ module.exports = {
                     .setName("user")
                     .setDescription("Check the Blackjack statistics for a certain user.")
                     .setRequired(false)
-            ),
+            )
         ),
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand(false);
