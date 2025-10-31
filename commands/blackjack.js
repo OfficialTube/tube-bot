@@ -45,7 +45,7 @@ module.exports = {
         .setName("blackjack")
         .setDescription("Play a game of blackjack!"),
     async execute(interaction) {
-        let user = await User.findOne({ id: interaction.user.id });
+        let user = await User.findOne({ id: interaction.user.userId });
 
         if (!user || user.money < 10)
         {
