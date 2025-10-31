@@ -2,6 +2,13 @@ const { SlashCommandBuilder } = require("discord.js");
 const User = require("../models/User");
 const { logOffline } = require("../utils/logger");
 
+const moneyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 function formatNumber(n)
 {
   if (n == null || isNaN(n)) return "0";
@@ -20,40 +27,20 @@ function formatMoney(n)
   if (n == null || isNaN(n)) return "$0";
   else
   {
-    return "$" + n.toLocaleString();
+    return moneyFormatter(n);
   }
 }
 
 function formatMoneyNet(x, y)
 {
     let netMoney = x - y;
-    if(netMoney > 0)
-    {
-        return "+$" + netMoney.toLocaleString();
-    } else if(netMoney < 0)
-    {
-        netMoney -= (netMoney * 2);
-        return "-$" + netMoney.toLocaleString();
-    } else
-    { 
-        return "$" + netMoney.toLocaleString();
-    }
+    return moneyFormatter(netMoney);
 }
 
 function moneyPerRound(x, y)
 {
-    let n = (Math.round((x / y) * 100) / 100).toFixed(2);
-    if(n > 0)
-    {
-        return "+$" + n.toLocaleString();
-    } else if(n < 0)
-    {
-        n -= (n * 2);
-        return "-$" + n.toLocaleString();
-    } else
-    { 
-        return "$" + n.toLocaleString();
-    }
+    let n = x / y;
+    return moneyFormatter(n);
 }
 
 function formatPercent(x, y)
