@@ -64,6 +64,7 @@ async function handleMessageXP(message) {
     while (user.xp >= user.levelxp) {
       user.xp -= user.levelxp;
       user.level++;
+      user.money += (user.level * 10);
       user.levelxp += user.level;
       leveledUp = true;
     }

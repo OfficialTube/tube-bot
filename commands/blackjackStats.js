@@ -50,7 +50,7 @@ function formatPercent(x, y)
 
 function pointsPerRound(x, y)
 {
-    return (Math.round((x / y) * 1000) / 1000).toFixed(3) + " Points Per Round";
+    return (Math.round((x / y) * 1000) / 1000).toFixed(3);
 }
 
 module.exports = {
