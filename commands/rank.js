@@ -68,6 +68,10 @@ module.exports = {
       const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
       const totalWeeklyUsers = allWeeklyUsers.length;
 
+      const allBlackjackUsers = await User.find({guildId, points: { $gt: 0 } }).sort({points: -1});
+      const blackjackPoints = allBlackjackUsers.findIndex(u => u.userId === userId) + 1;
+      const totalBlackjackUsers = allBlackjackUsers.length;
+
       let weeklyRankDisplay;
       if (!weeklyRank)
       {
@@ -77,8 +81,17 @@ module.exports = {
         weeklyRankDisplay = `Rank: ${formatNumber(weeklyRank)} of ${formatNumber(totalWeeklyUsers)}`;
       }
 
+      let blackjackPointsDisplay;
+      if (!blackjackPoints)
+      {
+        blackjackPointsDisplay = 'Rank: Unranked';
+      } else
+      {
+        blackjackPointsDisplay = `Rank: ${formatNumber(blackjackPoints)} of ${formatNumber(totalBlackjackUsers)}`;
+      }
+
       return interaction.editReply({
-        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}\n\n**__Blackjack Stats__**\nMoney: ${formatMoney(user.money)}\n__Wins/Blackjacks/Losses/Ties/Rounds__\n${user.wins}/${user.blackjacks}/${user.losses}/${user.ties}/${user.rounds}\n__Net Money = Money Gained - Money Lost__\n${formatMoney(user.moneyNet)} = ${formatMoney(user.moneyGained)} - ${formatMoney(user.moneyLost)}\n__Current Streak/Best Streak__\n${user.streakCurrent}/${user.streakBest}\nPoints: ${formatNumber(user.points)}`,
+        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}\n\n**__Blackjack Stats__**\nRank: ${blackjackPointsDisplay}\nMoney: ${formatMoney(user.money)}\n__Wins/Blackjacks/Losses/Ties/Rounds__\n${user.wins}/${user.blackjacks}/${user.losses}/${user.ties}/${user.rounds}\n__Net Money = Money Gained - Money Lost__\n${formatMoney(user.moneyNet)} = ${formatMoney(user.moneyGained)} - ${formatMoney(user.moneyLost)}\n__Current Streak/Best Streak__\n${user.streakCurrent}/${user.streakBest}\nPoints: ${formatNumber(user.points)}`,
       });
 
     } catch (err) {
