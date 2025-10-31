@@ -108,16 +108,16 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("blackjack")
         .setDescription("Play a game of blackjack!")
-        .addSubcommand(subcommand =>
-        subcommand
+        .addStringOption(option =>
+        option
             .setName("stats")
             .setDescription("Check your Blackjack statistics.")
-            .addUserOption(option =>
-                option
-                    .setName("user")
-                    .setDescription("Check the Blackjack statistics for a certain user.")
-                    .setRequired(false)
-            )
+        )
+        .addUserOption(option =>
+            option
+                .setName("user")
+                .setDescription("Check the Blackjack statistics for a certain user.")
+                .setRequired(false)
         ),
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand(false);
