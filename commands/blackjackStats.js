@@ -32,7 +32,7 @@ function formatMoneyNet(x, y)
         return "+$" + netMoney.toLocaleString();
     } else if(netMoney < 0)
     {
-        netMoney += (netMoney * 2);
+        netMoney -= (netMoney * 2);
         return "-$" + netMoney.toLocaleString();
     } else
     { 
@@ -48,7 +48,7 @@ function moneyPerRound(x, y)
         return "+$" + n.toLocaleString();
     } else if(n < 0)
     {
-        n += (n * 2);
+        n -= (n * 2);
         return "-$" + n.toLocaleString();
     } else
     { 
@@ -63,7 +63,7 @@ function formatPercent(x, y)
 
 function pointsPerRound(x, y)
 {
-    return Math.round(x / y).toFixed(3) + " Points Per Round";
+    return Math.round((x / y)).toFixed(3) + " Points Per Round";
 }
 
 module.exports = {
@@ -112,7 +112,7 @@ module.exports = {
             }
 
             return interaction.editReply({
-                content: `**__${user.username}'s Blackjack Stats__**\nPoints: ${formatNumber(user.points)}\n${blackjackPointsDisplay}\n\nRounds: ${formatNumber(user.rounds)}\nWon: ${formatNumber(user.wins)} (${formatPercent(user.wins, user.rounds)})\nBlackjacks: ${formatNumber(user.blackjacks)} (${formatPercent(user.blackjacks, user.wins)} of Wins) (${formatPercent(user.blackjacks, user.rounds)} of Total)\nTies: ${formatNumber(user.ties)} (${formatPercent(user.ties, user.rounds)})\nLost: ${formatNumber(user.losses)} (${formatPercent(user.losses, user.rounds)})\nAverage Points Per Round: ${pointsPerRound(user.points, user.rounds)}\n\nMoney Earned: ${formatMoney(user.moneyGained)}\nMoney Lost: ${formatMoney(user.moneyLost)}\nNet Money: ${formatMoneyNet(user.moneyGained, user.moneyLost)}\nAverage Money Per Round: ${moneyPerRound(user.netMoney, user.rounds)}\n\nCurrent Streak: ${user.streakCurrent}\nBest Streak: ${user.streakBest}`
+                content: `**__${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Blackjack Stats__**\nPoints: ${formatNumber(user.points)}\n${blackjackPointsDisplay}\n\nRounds: ${formatNumber(user.rounds)}\nWins: ${formatNumber(user.wins)} (${formatPercent(user.wins, user.rounds)})\nBlackjacks: ${formatNumber(user.blackjacks)} (${formatPercent(user.blackjacks, user.wins)} of Wins) (${formatPercent(user.blackjacks, user.rounds)} of Total)\nTies: ${formatNumber(user.ties)} (${formatPercent(user.ties, user.rounds)})\nLost: ${formatNumber(user.losses)} (${formatPercent(user.losses, user.rounds)})\nAverage Points Per Round: ${pointsPerRound(user.points, user.rounds)}\n\nMoney Earned: ${formatMoney(user.moneyGained)}\nMoney Lost: ${formatMoney(user.moneyLost)}\nNet Money: ${formatMoneyNet(user.moneyGained, user.moneyLost)}\nAverage Money Per Round: ${moneyPerRound(user.moneyNet, user.rounds)}\n\nCurrent Streak: ${user.streakCurrent}\nBest Streak: ${user.streakBest}`
             });
 
         } catch (err)
