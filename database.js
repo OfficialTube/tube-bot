@@ -58,6 +58,6 @@ module.exports = async () => {
     console.log("Restarting bot to fix MongoDB connection...");
     logOffline("Restarting bot to fix MongoDB connection...");
     process.exit(1);
-    }
+    } 
   });
 };

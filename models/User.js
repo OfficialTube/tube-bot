@@ -9,7 +9,8 @@ const userSchema = new mongoose.Schema({
   levelxp: { type: Number, default: 10},
   totalxp: {type: Number, default: 0},
   lastmsg: {type: Number, default: 0},
-  weeklyxp: {type: Number, default: 0}
+  weeklyxp: {type: Number, default: 0},
+  money: {type: Number, default: 0},
 });
 
 module.exports = mongoose.model("User", userSchema);

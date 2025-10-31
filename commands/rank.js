@@ -69,7 +69,7 @@ module.exports = {
       }
 
       return interaction.editReply({
-        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}`,
+        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}\n\n**__Money__**\n$${user.money}`,
       });
 
     } catch (err) {
