@@ -112,6 +112,7 @@ module.exports = {
         option
             .setName("stats")
             .setDescription("Check your Blackjack statistics.")
+            .setRequired(false)
         )
         .addUserOption(option =>
             option
