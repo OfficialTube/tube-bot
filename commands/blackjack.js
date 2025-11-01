@@ -54,8 +54,8 @@ module.exports = {
             });
         }
 
-        // Start the first round
-        startRound(interaction, user);
+        // Start the game
+        await startRound(interaction, user);
 
         async function startRound(interaction, user) {
             const deck = createDeck();
@@ -76,10 +76,9 @@ module.exports = {
                 )
                 .setColor(Colors.PLAYER);
 
-            // Send the initial ephemeral message
+            // Initial ephemeral message
             const message = await interaction.reply({ embeds: [embed], components: [buttons], ephemeral: true, fetchReply: true });
 
-            // Component collector for Hit/Stand
             const collector = message.createMessageComponentCollector({
                 filter: i => i.user.id === interaction.user.id,
                 time: 120000
@@ -92,7 +91,7 @@ module.exports = {
 
                     if (total > 21) {
                         collector.stop();
-                        await endGame(i, playerHand, dealerHand, total, "bust");
+                        await endGame(i, playerHand, dealerHand, "bust");
                     } else {
                         await i.update({
                             embeds: [new EmbedBuilder()
@@ -112,9 +111,7 @@ module.exports = {
                 }
             });
 
-            // Dealer's turn function
             async function dealerTurn(i, playerHand, dealerHand) {
-                let dealerTotal = handValue(dealerHand);
                 await i.update({
                     embeds: [new EmbedBuilder()
                         .setTitle("🃏 Dealer's Turn")
@@ -127,11 +124,9 @@ module.exports = {
                     components: []
                 });
 
-                while (dealerTotal < 17) {
+                while (handValue(dealerHand) < 17) {
                     await sleep(1000);
                     dealerHand.push(drawCard(deck));
-                    dealerTotal = handValue(dealerHand);
-
                     await i.editReply({
                         embeds: [new EmbedBuilder()
                             .setTitle("🃏 Dealer's Turn")
@@ -145,16 +140,13 @@ module.exports = {
                     });
                 }
 
-                await endGame(i, playerHand, dealerHand, handValue(playerHand));
+                await endGame(i, playerHand, dealerHand);
             }
 
-            // End game function
-            async function endGame(i, playerHand, dealerHand, playerTotal, reason=null) {
+            async function endGame(i, playerHand, dealerHand, reason=null) {
+                const playerTotal = handValue(playerHand);
                 const dealerTotal = handValue(dealerHand);
-                let resultText = "";
-                let resultColor = Colors.PLAYER;
-                let money = 0;
-                let points = 0;
+                let resultText="", resultColor=Colors.PLAYER, money=0, points=0;
 
                 if (reason === "bust") {
                     resultText = "💥 Bust! You lose!";
@@ -163,50 +155,26 @@ module.exports = {
                     user.streakCurrent = 0;
                     resultColor = Colors.LOSE;
                     user.losses++;
+                } else if (playerTotal === 21 && playerHand.length === 2 && dealerTotal !== 21) {
+                    resultText = "🎉 Blackjack!";
+                    money = 15; points = 2; user.streakCurrent++; user.blackjacks++; user.wins++; resultColor = Colors.BLACKJACK;
+                } else if (playerTotal > dealerTotal || dealerTotal > 21) {
+                    resultText = "✅ You win!"; money = 10; points = 1; user.streakCurrent++; user.wins++; resultColor = Colors.WIN;
+                } else if (playerTotal < dealerTotal) {
+                    resultText = "❌ You lose!"; money = -10; points = -1; user.streakCurrent = 0; user.losses++; resultColor = Colors.LOSE;
                 } else {
-                    if (playerTotal === 21 && playerHand.length === 2 && dealerTotal !== 21) {
-                        resultText = "🎉 Blackjack!";
-                        money = 15;
-                        points = 2;
-                        user.streakCurrent++;
-                        resultColor = Colors.BLACKJACK;
-                        user.blackjacks++;
-                        user.wins++;
-                    } else if (playerTotal > dealerTotal || dealerTotal > 21) {
-                        resultText = "✅ You win!";
-                        money = 10;
-                        points = 1;
-                        user.streakCurrent++;
-                        resultColor = Colors.WIN;
-                        user.wins++;
-                    } else if (playerTotal < dealerTotal) {
-                        resultText = "❌ You lose!";
-                        money = -10;
-                        points = -1;
-                        user.streakCurrent = 0;
-                        resultColor = Colors.LOSE;
-                        user.losses++;
-                    } else {
-                        resultText = "🤝 Tie!";
-                        money = 0;
-                        points = 0;
-                        user.streakCurrent = 0;
-                        resultColor = Colors.PLAYER;
-                        user.ties++;
-                    }
+                    resultText = "🤝 Tie!"; money = 0; points = 0; user.streakCurrent = 0; user.ties++;
                 }
 
-                // Update money/points
                 user.money += money;
-                user.rounds = (user.rounds || 0) + 1;
-                user.moneyGained = (user.moneyGained || 0) + Math.max(0, money);
-                user.moneyLost = (user.moneyLost || 0) + Math.max(0, -money);
+                user.rounds = (user.rounds || 0)+1;
+                user.moneyGained = (user.moneyGained||0) + Math.max(0, money);
+                user.moneyLost = (user.moneyLost||0) + Math.max(0,-money);
                 user.moneyNet = user.moneyGained - user.moneyLost;
-                user.points = (user.points || 0) + points;
-                if (user.streakCurrent > user.streakBest) user.streakBest = user.streakCurrent;
+                user.points = (user.points||0) + points;
+                if (user.streakCurrent > (user.streakBest||0)) user.streakBest = user.streakCurrent;
                 await user.save();
 
-                // Play Again button
                 const playAgainRow = new ActionRowBuilder()
                     .addComponents(
                         new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Primary)
@@ -225,7 +193,6 @@ module.exports = {
                     components: [playAgainRow]
                 });
 
-                // Play Again collector
                 const playAgainCollector = i.message.createMessageComponentCollector({
                     filter: b => b.user.id === interaction.user.id && b.customId === "playAgain",
                     max: 1,
@@ -233,7 +200,7 @@ module.exports = {
                 });
 
                 playAgainCollector.on("collect", async b => {
-                    await b.deferUpdate(); // acknowledge button
+                    await b.deferUpdate();
                     startRound(interaction, user);
                 });
             }
