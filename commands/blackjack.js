@@ -1,4 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const {
+    SlashCommandBuilder,
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
+} = require("discord.js");
 const User = require("../models/User");
 
 function createDeck() {
@@ -40,7 +46,7 @@ function calculateHand(hand) {
 function handToString(hand, hideSecond = false) {
     return hand
         .map((c, i) => (hideSecond && i === 1 ? "[??]" : `${c.value}${c.suit}`))
-        .join(" · ");
+        .join(" • ");
 }
 
 async function startGame(interaction, user) {
@@ -48,20 +54,25 @@ async function startGame(interaction, user) {
     const playerHand = [deck.pop(), deck.pop()];
     const dealerHand = [deck.pop(), deck.pop()];
 
-    const row = new ActionRowBuilder().addComponents(
+    const buttons = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId("hit").setLabel("Hit").setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId("stand").setLabel("Stand").setStyle(ButtonStyle.Secondary)
+        new ButtonBuilder().setCustomId("stand").setLabel("Stand").setStyle(ButtonStyle.Danger)
     );
 
     const embed = new EmbedBuilder()
-        .setTitle("🃏 Blackjack")
+        .setTitle("♣️ Blackjack ♠️")
+        .setColor(0x3498db)
         .setDescription(
             `**Your Hand:** ${handToString(playerHand)} (**${calculateHand(playerHand)}**)\n` +
             `**Dealer:** ${handToString(dealerHand, true)}`
-        )
-        .setColor(0x2b2d31);
+        );
 
-    const reply = await interaction.reply({ embeds: [embed], components: [row], fetchReply: true });
+    const reply = await interaction.reply({
+        embeds: [embed],
+        components: [buttons],
+        ephemeral: true,
+        fetchReply: true
+    });
 
     const collector = reply.createMessageComponentCollector({
         filter: i => i.user.id === interaction.user.id,
@@ -81,12 +92,13 @@ async function startGame(interaction, user) {
                 return;
             }
 
-            const newEmbed = EmbedBuilder.from(embed)
+            const updated = EmbedBuilder.from(embed)
                 .setDescription(
                     `**Your Hand:** ${handToString(playerHand)} (**${total}**)\n` +
                     `**Dealer:** ${handToString(dealerHand, true)}`
                 );
-            await interaction.editReply({ embeds: [newEmbed], components: [row] });
+
+            await interaction.editReply({ embeds: [updated], components: [buttons] });
         }
 
         if (i.customId === "stand") {
@@ -108,9 +120,9 @@ async function dealerTurn(interaction, user, playerHand, dealerHand, deck) {
 
     const updateEmbed = async (desc) => {
         const embed = new EmbedBuilder()
-            .setTitle("🃏 Dealer's Turn")
-            .setDescription(desc)
-            .setColor(0x9b59b6);
+            .setTitle("♣️ Blackjack ♠️")
+            .setColor(0xe67e22)
+            .setDescription(desc);
         await interaction.editReply({ embeds: [embed], components: [] });
     };
 
@@ -147,13 +159,13 @@ async function endGame(interaction, user, playerHand, dealerHand, result) {
     }
 
     const embed = new EmbedBuilder()
-        .setTitle("🏁 Game Over")
+        .setTitle("♣️ Blackjack ♠️")
+        .setColor(0x2ecc71)
         .setDescription(
             `${resultText}\n\n` +
             `**Your Hand:** ${handToString(playerHand)} (**${playerTotal}**)\n` +
             `**Dealer:** ${handToString(dealerHand)} (**${dealerTotal}**)`
-        )
-        .setColor(0x5865f2);
+        );
 
     const playAgainRow = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Success)
@@ -161,18 +173,14 @@ async function endGame(interaction, user, playerHand, dealerHand, result) {
 
     await interaction.editReply({ embeds: [embed], components: [playAgainRow] });
 
-    const collector2 = interaction.channel.createMessageComponentCollector({
+    const collector = interaction.channel.createMessageComponentCollector({
         filter: i => i.user.id === interaction.user.id && i.customId === "playAgain",
         time: 60000
     });
 
-    collector2.on("collect", async b => {
-        await b.deferUpdate();
-
-        // clear the old game before restarting
+    collector.on("collect", async i => {
+        await i.deferUpdate();
         await interaction.editReply({ embeds: [], components: [] });
-
-        // restart a new game cleanly
         startGame(interaction, user);
     });
 }
@@ -180,7 +188,7 @@ async function endGame(interaction, user, playerHand, dealerHand, result) {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("blackjack")
-        .setDescription("Play a game of Blackjack!"),
+        .setDescription("Play Blackjack!"),
     async execute(interaction) {
         const user = await User.findOne({ userId: interaction.user.id });
         if (!user) return interaction.reply({ content: "You need a profile first!", ephemeral: true });
