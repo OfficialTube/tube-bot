@@ -26,6 +26,7 @@ function drawCard(deck) {
 function handValue(hand) {
     let total = 0, aces = 0;
     for (const card of hand) {
+        if (!card) continue;
         if (["J","Q","K"].includes(card.value)) total += 10;
         else if (card.value === "A") { total += 11; aces++; }
         else total += parseInt(card.value);
@@ -35,7 +36,7 @@ function handValue(hand) {
 }
 
 function handToString(hand, hideSecond=false) {
-    return hand.map((c, i) => hideSecond && i === 1 ? "[??]" : `${c.value}${c.suit}`).join(" · ");
+    return hand.map((c,i)=> hideSecond && i===1 ? "[??]" : `${c.value}${c.suit}`).join(" · ");
 }
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -45,123 +46,198 @@ module.exports = {
         .setName("blackjack")
         .setDescription("Play a game of blackjack!"),
     async execute(interaction) {
-        const user = await User.findOne({ userId: interaction.user.id });
-        if (!user || user.money < 10) return interaction.reply({ content: "You do not have enough money to play Blackjack! You need at least $10!", ephemeral: true });
+        let user = await User.findOne({ userId: interaction.user.id });
 
-        // Defer initial reply so we can safely update later
+        if (!user || user.money < 10) {
+            return interaction.reply({
+                content: `You do not have enough money to play Blackjack! You need at least $10!`,
+                ephemeral: true
+            });
+        }
+
+        // Defer initial reply to avoid InteractionNotReplied errors
         await interaction.deferReply({ ephemeral: true });
-
         startGame(interaction, user);
-    }
-};
 
-async function startGame(interaction, user) {
-    const deck = createDeck();
-    const playerHand = [drawCard(deck), drawCard(deck)];
-    const dealerHand = [drawCard(deck), drawCard(deck)];
+        async function startGame(interaction, user) {
+            const deck = createDeck();
+            const playerHand = [drawCard(deck), drawCard(deck)];
+            const dealerHand = [drawCard(deck), drawCard(deck)];
 
-    const buttons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder().setCustomId("hit").setLabel("Hit").setStyle(ButtonStyle.Success),
-            new ButtonBuilder().setCustomId("stand").setLabel("Stand").setStyle(ButtonStyle.Danger)
-        );
+            const row = new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder().setCustomId("hit").setLabel("Hit").setStyle(ButtonStyle.Success),
+                    new ButtonBuilder().setCustomId("stand").setLabel("Stand").setStyle(ButtonStyle.Danger)
+                );
 
-    const message = await interaction.editReply({
-        embeds: [new EmbedBuilder()
-            .setTitle("🃏 Blackjack")
-            .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n**Dealer:** ${handToString(dealerHand, true)}`)
-            .setColor(Colors.PLAYER)
-        ],
-        components: [buttons]
-    });
+            const embed = new EmbedBuilder()
+                .setTitle("🃏 Blackjack")
+                .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n` +
+                                `**Dealer:** ${handToString(dealerHand, true)}`)
+                .setColor(Colors.PLAYER);
 
-    const collector = message.createMessageComponentCollector({
-        filter: i => i.user.id === interaction.user.id,
-        time: 120000
-    });
+            const message = await interaction.editReply({ embeds: [embed], components: [row] });
 
-    collector.on("collect", async i => {
-        if (i.customId === "hit") {
-            playerHand.push(drawCard(deck));
-            const total = handValue(playerHand);
+            const collector = message.createMessageComponentCollector({
+                filter: i => i.user.id === interaction.user.id,
+                time: 120000
+            });
 
-            if (total > 21) {
-                collector.stop();
-                await endGame(i, playerHand, dealerHand, user, "bust");
-            } else {
-                await i.update({
-                    embeds: [new EmbedBuilder()
-                        .setTitle("🃏 Blackjack")
-                        .setDescription(`**Your hand:** ${handToString(playerHand)} (**${total}**)\n**Dealer:** ${handToString(dealerHand, true)}`)
-                        .setColor(Colors.PLAYER)],
-                    components: [buttons]
+            collector.on("collect", async i => {
+                if (i.customId === "hit") {
+                    playerHand.push(drawCard(deck));
+                    const total = handValue(playerHand);
+
+                    if (total > 21) {
+                        collector.stop();
+                        await endGame(i, playerHand, dealerHand, "Bust! You lose!", Colors.LOSE, -10, -1);
+                    } else {
+                        await i.update({
+                            embeds: [new EmbedBuilder()
+                                .setTitle("🃏 Blackjack")
+                                .setDescription(`**Your hand:** ${handToString(playerHand)} (**${total}**)\n` +
+                                                `**Dealer:** ${handToString(dealerHand, true)}`)
+                                .setColor(Colors.PLAYER)],
+                            components: [row]
+                        });
+                    }
+                } else if (i.customId === "stand") {
+                    collector.stop();
+                    await dealerTurn(i, playerHand, dealerHand);
+                }
+            });
+
+            async function dealerTurn(interactionOrButton, playerHand, dealerHand) {
+                let dealerTotal = handValue(dealerHand);
+                const dealerEmbed = new EmbedBuilder()
+                    .setTitle("🃏 Dealer's Turn")
+                    .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n` +
+                                    `**Dealer:** ${handToString([dealerHand[0]], true)}`)
+                    .setColor(Colors.DEALER);
+
+                await interactionOrButton.update({ embeds: [dealerEmbed], components: [] });
+
+                while (dealerTotal < 17) {
+                    await sleep(1000);
+                    dealerHand.push(drawCard(deck));
+                    dealerTotal = handValue(dealerHand);
+                    const updateEmbed = new EmbedBuilder()
+                        .setTitle("🃏 Dealer's Turn")
+                        .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n` +
+                                        `**Dealer:** ${handToString(dealerHand)}`)
+                        .setColor(Colors.DEALER);
+
+                    await interactionOrButton.editReply({ embeds: [updateEmbed] });
+                }
+
+                // Determine result
+                const playerTotal = handValue(playerHand);
+                let resultText = "", resultColor = Colors.LOSE, points = 0, money = 0;
+
+                if (playerTotal === 21 && playerHand.length === 2 && (dealerHand.length !== 2 || handValue(dealerHand) !== 21)) {
+                    resultText = "Blackjack!";
+                    resultColor = Colors.BLACKJACK;
+                    points = 2;
+                    money = 15;
+                    user.streakCurrent++;
+                } else if (playerTotal > 21 || dealerTotal > playerTotal && dealerTotal <= 21) {
+                    resultText = "You lose!";
+                    resultColor = Colors.LOSE;
+                    points = -1;
+                    money = -10;
+                    user.streakCurrent = 0;
+                } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
+                    resultText = "You win!";
+                    resultColor = Colors.WIN;
+                    points = 1;
+                    money = 10;
+                    user.streakCurrent++;
+                } else {
+                    resultText = "Tie!";
+                    resultColor = Colors.PLAYER;
+                    points = 0;
+                    money = 0;
+                    user.streakCurrent = 0;
+                }
+
+                // Update user stats
+                user.money += money;
+                if (money > 0) user.wins++; 
+                else if (money < 0) user.losses++;
+                else user.ties++;
+                user.rounds++;
+                user.moneyGained += money > 0 ? money : 0;
+                user.moneyLost += money < 0 ? -money : 0;
+                user.moneyNet = user.moneyGained - user.moneyLost;
+                user.points += points * (user.streakCurrent || 1);
+                if (user.streakCurrent > (user.streakBest || 0)) user.streakBest = user.streakCurrent;
+                await user.save();
+
+                // Send result + Play Again button
+                const playAgainRow = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Primary)
+                    );
+
+                const resultEmbed = new EmbedBuilder()
+                    .setTitle("🏁 Results")
+                    .setDescription(`**Your hand:** ${handToString(playerHand)} (**${playerTotal}**)\n` +
+                                    `**Dealer:** ${handToString(dealerHand)} (**${dealerTotal}**)\n\n` +
+                                    `${resultText}\nMoney Earned: $${money}\nPoints Earned: ${points * (user.streakCurrent || 1)}`)
+                    .setColor(resultColor);
+
+                await interactionOrButton.editReply({ embeds: [resultEmbed], components: [playAgainRow] });
+
+                // Play Again collector
+                const collector2 = interactionOrButton.channel.createMessageComponentCollector({
+                    filter: i => i.user.id === interaction.user.id && i.customId === "playAgain",
+                    time: 60000
+                });
+
+                collector2.on("collect", async b => {
+                    await b.deferUpdate();
+                    startGame(interaction, user); // always pass ORIGINAL interaction
                 });
             }
-        } else if (i.customId === "stand") {
-            collector.stop();
-            await dealerTurn(i, playerHand, dealerHand, user);
+
+            async function endGame(interactionOrButton, playerHand, dealerHand, resultText, color, money, points) {
+                const playAgainRow = new ActionRowBuilder()
+                    .addComponents(
+                        new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Primary)
+                    );
+
+                const resultEmbed = new EmbedBuilder()
+                    .setTitle("🏁 Results")
+                    .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n` +
+                                    `**Dealer:** ${handToString(dealerHand)} (**${handValue(dealerHand)}**)\n\n` +
+                                    `${resultText}\nMoney Earned: $${money}\nPoints Earned: ${points}`)
+                    .setColor(color);
+
+                // Update user stats
+                user.money += money;
+                if (money > 0) user.wins++; 
+                else if (money < 0) user.losses++;
+                else user.ties++;
+                user.rounds++;
+                user.moneyGained += money > 0 ? money : 0;
+                user.moneyLost += money < 0 ? -money : 0;
+                user.moneyNet = user.moneyGained - user.moneyLost;
+                user.points += points;
+                await user.save();
+
+                await interactionOrButton.editReply({ embeds: [resultEmbed], components: [playAgainRow] });
+
+                // Play Again collector
+                const collector2 = interactionOrButton.channel.createMessageComponentCollector({
+                    filter: i => i.user.id === interaction.user.id && i.customId === "playAgain",
+                    time: 60000
+                });
+
+                collector2.on("collect", async b => {
+                    await b.deferUpdate();
+                    startGame(interaction, user); // pass ORIGINAL interaction
+                });
+            }
         }
-    });
-}
-
-async function dealerTurn(i, playerHand, dealerHand, user) {
-    const buttons = new ActionRowBuilder(); // remove buttons during dealer turn
-
-    while (handValue(dealerHand) < 17) {
-        dealerHand.push(drawCard(deck));
-        await i.update({
-            embeds: [new EmbedBuilder()
-                .setTitle("🃏 Dealer's Turn")
-                .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n**Dealer:** ${handToString(dealerHand)}`)
-                .setColor(Colors.DEALER)],
-            components: []
-        });
-        await sleep(1000);
     }
-
-    await endGame(i, playerHand, dealerHand, user);
-}
-
-async function endGame(i, playerHand, dealerHand, user, reason=null) {
-    const playerTotal = handValue(playerHand);
-    const dealerTotal = handValue(dealerHand);
-    let resultText="", resultColor=Colors.PLAYER, money=0, points=0;
-
-    if (reason === "bust") { resultText = "💥 Bust! You lose!"; money = -10; points = -1; user.streakCurrent = 0; resultColor = Colors.LOSE; user.losses++; }
-    else if (playerTotal === 21 && playerHand.length === 2 && dealerTotal !== 21) { resultText = "🎉 Blackjack!"; money = 15; points = 2; user.streakCurrent++; user.blackjacks++; user.wins++; resultColor = Colors.BLACKJACK; }
-    else if (playerTotal > dealerTotal || dealerTotal > 21) { resultText = "✅ You win!"; money = 10; points = 1; user.streakCurrent++; user.wins++; resultColor = Colors.WIN; }
-    else if (playerTotal < dealerTotal) { resultText = "❌ You lose!"; money = -10; points = -1; user.streakCurrent = 0; user.losses++; resultColor = Colors.LOSE; }
-    else { resultText = "🤝 Tie!"; money = 0; points = 0; user.streakCurrent = 0; user.ties++; }
-
-    user.money += money;
-    user.rounds = (user.rounds || 0) + 1;
-    user.moneyGained = (user.moneyGained || 0) + Math.max(0, money);
-    user.moneyLost = (user.moneyLost || 0) + Math.max(0, -money);
-    user.moneyNet = user.moneyGained - user.moneyLost;
-    user.points = (user.points || 0) + points;
-    if (user.streakCurrent > (user.streakBest||0)) user.streakBest = user.streakCurrent;
-    await user.save();
-
-    const playAgainRow = new ActionRowBuilder()
-        .addComponents(new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Primary));
-
-    await i.update({
-        embeds: [new EmbedBuilder()
-            .setTitle("🏁 Results")
-            .setDescription(`**Your hand:** ${handToString(playerHand)} (**${playerTotal}**)\n**Dealer:** ${handToString(dealerHand)} (**${dealerTotal}**)\n\n${resultText}\nMoney: $${money}\nPoints: ${points}`)
-            .setColor(resultColor)
-        ],
-        components: [playAgainRow]
-    });
-
-    const collector2 = i.message.createMessageComponentCollector({
-        filter: b => b.user.id === i.user.id && b.customId === "playAgain",
-        max: 1,
-        time: 60000
-    });
-
-    collector2.on("collect", async b => {
-        await b.deferUpdate();
-        startGame(i, user); // new game with same interaction user
-    });
-}
+};
