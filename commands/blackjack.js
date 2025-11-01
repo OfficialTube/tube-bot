@@ -35,7 +35,7 @@ function handValue(hand) {
 }
 
 function handToString(hand, hideSecond=false) {
-    return hand.map((c,i)=> hideSecond && i===1 ? "[??]" : `|${c.value}${c.suit}|`).join(" ");
+    return hand.map((c,i)=> hideSecond && i===1 ? "[??]" : `${c.value}${c.suit}`).join(" | ");
 }
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
