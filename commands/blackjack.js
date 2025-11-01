@@ -76,7 +76,7 @@ module.exports = {
                 )
                 .setColor(Colors.PLAYER);
 
-            await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+            await interaction.followUp({ embeds: [embed], components: [row], ephemeral: true });
 
             const collector = interaction.channel.createMessageComponentCollector({
                 filter: i => i.user.id === interaction.user.id,
