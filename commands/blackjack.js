@@ -26,6 +26,7 @@ function drawCard(deck) {
 function handValue(hand) {
     let total = 0, aces = 0;
     for (const card of hand) {
+        if (!card) continue;
         if (["J","Q","K"].includes(card.value)) total += 10;
         else if (card.value === "A") { total += 11; aces++; }
         else total += parseInt(card.value);
@@ -54,7 +55,6 @@ module.exports = {
             });
         }
 
-        // Start first round
         await playRound(interaction, user, true);
     }
 };
@@ -78,7 +78,6 @@ async function playRound(interaction, user, firstRound = false) {
         )
         .setColor(Colors.PLAYER);
 
-    // Reply first round, followUp on subsequent rounds
     let msg;
     if (firstRound) {
         msg = await interaction.reply({ embeds: [embed], components: [row], ephemeral: true, fetchReply: true });
@@ -100,7 +99,7 @@ async function playRound(interaction, user, firstRound = false) {
 
             if (total > 21) {
                 collector.stop();
-                await endGame(interaction, i, user, playerHand, dealerHand, "Bust! You lose!", Colors.LOSE, -10, -1);
+                await endGame(interaction, i, user, playerHand, dealerHand, deck, "Bust! You lose!", Colors.LOSE, -10, -1);
             } else {
                 await i.update({
                     embeds: [new EmbedBuilder()
@@ -115,12 +114,12 @@ async function playRound(interaction, user, firstRound = false) {
             }
         } else if (i.customId === "stand") {
             collector.stop();
-            await dealerTurn(interaction, i, user, playerHand, dealerHand);
+            await dealerTurn(interaction, i, user, playerHand, dealerHand, deck);
         }
     });
 }
 
-async function dealerTurn(interaction, button, user, playerHand, dealerHand) {
+async function dealerTurn(interaction, button, user, playerHand, dealerHand, deck) {
     await button.update({
         embeds: [new EmbedBuilder()
             .setTitle("🃏 Dealer's Turn")
@@ -132,7 +131,7 @@ async function dealerTurn(interaction, button, user, playerHand, dealerHand) {
 
     while(handValue(dealerHand) < 17) {
         await sleep(1000);
-        dealerHand.push(drawCard(deck=[]));
+        dealerHand.push(drawCard(deck));
         await button.editReply({
             embeds: [new EmbedBuilder()
                 .setTitle("🃏 Dealer's Turn")
@@ -153,10 +152,10 @@ async function dealerTurn(interaction, button, user, playerHand, dealerHand) {
     else if(playerTotal<dealerTotal){ resultText="You lose!"; points=-1; money=-10; }
     else { resultText="Tie!"; points=0; money=0; resultColor=Colors.PLAYER; }
 
-    await endGame(interaction, button, user, playerHand, dealerHand, resultText, resultColor, money, points);
+    await endGame(interaction, button, user, playerHand, dealerHand, deck, resultText, resultColor, money, points);
 }
 
-async function endGame(interaction, button, user, playerHand, dealerHand, resultText, color, money, points) {
+async function endGame(interaction, button, user, playerHand, dealerHand, deck, resultText, color, money, points) {
     const playAgainRow = new ActionRowBuilder()
         .addComponents(new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Primary));
 
