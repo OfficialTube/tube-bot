@@ -26,7 +26,7 @@ function drawCard(deck) {
 function handValue(hand) {
     let total = 0, aces = 0;
     for (const card of hand) {
-        if (!card) continue; // safeguard
+        if (!card) continue;
         if (["J","Q","K"].includes(card.value)) total += 10;
         else if (card.value === "A") { total += 11; aces++; }
         else total += parseInt(card.value);
@@ -81,8 +81,6 @@ module.exports = {
                 time: 120000
             });
 
-            let streak = user.streakCurrent || 0;
-
             collector.on("collect", async i => {
                 if (i.customId === "hit") {
                     playerHand.push(drawCard(deck));
@@ -90,7 +88,7 @@ module.exports = {
 
                     if (total > 21) {
                         collector.stop();
-                        await endGame(gameMessage, user, playerHand, dealerHand, -10, -1, "💥 Bust! You lose!", Colors.LOSE);
+                        await endGame(i, user, playerHand, dealerHand, -10, -1, "💥 Bust! You lose!", Colors.LOSE);
                     } else {
                         await i.update({
                             embeds: [new EmbedBuilder()
@@ -102,14 +100,13 @@ module.exports = {
                     }
                 } else if (i.customId === "stand") {
                     collector.stop();
-                    await dealerTurn(gameMessage, user, playerHand, dealerHand, deck);
+                    await dealerTurn(i, user, playerHand, dealerHand, deck);
                 }
             });
         }
 
-        async function dealerTurn(gameMessage, user, playerHand, dealerHand, deck) {
-            // Dealer reveals first card
-            await gameMessage.edit({
+        async function dealerTurn(interaction, user, playerHand, dealerHand, deck) {
+            await interaction.update({
                 embeds: [new EmbedBuilder()
                     .setTitle("🃏 Dealer's Turn")
                     .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n**Dealer:** ${handToString([dealerHand[0]], true)}`)
@@ -120,7 +117,7 @@ module.exports = {
             while (handValue(dealerHand) < 17) {
                 await sleep(1000);
                 dealerHand.push(drawCard(deck));
-                await gameMessage.edit({
+                await interaction.editReply({
                     embeds: [new EmbedBuilder()
                         .setTitle("🃏 Dealer's Turn")
                         .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n**Dealer:** ${handToString(dealerHand)}`)
@@ -129,69 +126,39 @@ module.exports = {
                 });
             }
 
-            // Determine result
             const playerTotal = handValue(playerHand);
             const dealerTotal = handValue(dealerHand);
             let resultText="", resultColor=Colors.LOSE, points=0, money=0;
 
             if (playerTotal===21 && playerHand.length===2 && dealerTotal !== 21) {
-                resultText="Blackjack!";
-                resultColor=Colors.BLACKJACK;
-                points = 2;
-                money = 15;
-                user.streakCurrent++;
-                streak = user.streakCurrent;
-                user.wins++; user.blackjacks++; user.rounds++;
-                user.money += money;
-                user.moneyGained += money;
+                resultText="Blackjack!"; resultColor=Colors.BLACKJACK; points=2; money=15;
+                user.streakCurrent++; user.wins++; user.blackjacks++; user.rounds++; user.money += money; user.moneyGained += money;
                 if (user.streakCurrent > user.streakBest) user.streakBest = user.streakCurrent;
-                user.points += points * streak;
-                user.pxp += 15;
+                user.points += points * user.streakCurrent; user.pxp += 15;
             } else if (playerTotal > 21) {
-                resultText="Bust! You lose!";
-                points=-1; money=-10;
-                user.streakCurrent=0;
-                user.losses++; user.rounds++;
-                user.money += money;
-                user.moneyLost += 10;
-                user.points += points;
-                streak = 0;
+                resultText="Bust! You lose!"; points=-1; money=-10; user.streakCurrent=0; user.losses++; user.rounds++; user.money += money; user.moneyLost += 10; user.points += points;
             } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
-                resultText="You win!";
-                points=1; money=10;
-                user.streakCurrent++;
-                streak = user.streakCurrent;
-                user.wins++; user.rounds++;
-                user.money += money; user.moneyGained += money;
-                if (user.streakCurrent > user.streakBest) user.streakBest = user.streakCurrent;
-                user.points += points * streak; user.pxp += 10;
+                resultText="You win!"; points=1; money=10; user.streakCurrent++; user.wins++; user.rounds++; user.money += money; user.moneyGained += money;
+                if (user.streakCurrent > user.streakBest) user.streakBest = user.streakCurrent; user.points += points * user.streakCurrent; user.pxp += 10;
             } else if (playerTotal < dealerTotal) {
-                resultText="You lose!";
-                points=-1; money=-10;
-                user.streakCurrent=0;
-                streak = 0;
-                user.losses++; user.rounds++;
-                user.money += money; user.moneyLost += 10; user.points--;
+                resultText="You lose!"; points=-1; money=-10; user.streakCurrent=0; user.losses++; user.rounds++; user.money += money; user.moneyLost += 10; user.points--;
             } else {
-                resultText="Tie!";
-                points=0; money=0;
-                user.streakCurrent=0; streak = 0;
-                user.ties++; user.rounds++;
+                resultText="Tie!"; points=0; money=0; user.streakCurrent=0; user.ties++; user.rounds++;
             }
 
             user.moneyNet = user.moneyGained - user.moneyLost;
             await user.save();
 
-            await endGame(gameMessage, user, playerHand, dealerHand, money, points, resultText, resultColor);
+            await endGame(interaction, user, playerHand, dealerHand, money, points, resultText, resultColor);
         }
 
-        async function endGame(gameMessage, user, playerHand, dealerHand, money, points, resultText, resultColor) {
+        async function endGame(interaction, user, playerHand, dealerHand, money, points, resultText, resultColor) {
             const playAgainRow = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Primary)
                 );
 
-            await gameMessage.edit({
+            await interaction.editReply({
                 embeds: [new EmbedBuilder()
                     .setTitle("🏁 Results")
                     .setDescription(
@@ -204,15 +171,16 @@ module.exports = {
                 components: [playAgainRow]
             });
 
-            const playAgainCollector = gameMessage.createMessageComponentCollector({
+            const playAgainCollector = interaction.channel.createMessageComponentCollector({
                 filter: i => i.user.id === user.userId && i.customId === "playAgain",
+                max: 1,
                 time: 60000
             });
 
             playAgainCollector.on("collect", async i => {
                 playAgainCollector.stop();
                 await i.deferUpdate();
-                startRound(i, user); // start new ephemeral round
+                startRound(i, user);
             });
         }
     }
