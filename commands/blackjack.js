@@ -278,7 +278,7 @@ module.exports = {
 
             playAgainCollector.on("collect", async i => {
                 playAgainCollector.stop();
-                await i.update({ content: null, embeds: [], components: [] });
+                await i.deferUpdate();
                 startBlackjack(interaction, user); // Recursively start a new round
             });
         }
