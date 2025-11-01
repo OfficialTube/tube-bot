@@ -262,7 +262,7 @@ module.exports = {
                             new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Primary)
                         );
 
-                    await interaction.followUp({
+                    await interaction.editReply({
                         embeds: [new EmbedBuilder()
                             .setTitle("🏁 Results")
                             .setDescription(
