@@ -54,6 +54,8 @@ module.exports = {
                 ephemeral: true
             })
         }
+
+        let firstGame = true;
         startBlackjack(interaction, user);
 
         async function startBlackjack(interaction, user)
@@ -76,7 +78,12 @@ module.exports = {
                 )
                 .setColor(Colors.PLAYER);
 
-            await interaction.followUp({ embeds: [embed], components: [row], ephemeral: true });
+            if (firstGame) {
+                await interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+                firstGame = false;
+            } else {
+                await interaction.followUp({ embeds: [embed], components: [row], ephemeral: true });
+            }
 
             const collector = interaction.channel.createMessageComponentCollector({
                 filter: i => i.user.id === interaction.user.id,
