@@ -2,11 +2,11 @@ const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, Embed
 const User = require("../models/User");
 
 const Colors = {
-    PLAYER: 0x3498db,     // Blue
-    DEALER: 0x95a5a6,     // Grey
-    WIN: 0x2ecc71,        // Green
-    LOSE: 0xe74c3c,       // Red
-    BLACKJACK: 0xf1c40f   // Gold
+    PLAYER: 0x3498db,
+    DEALER: 0x95a5a6,
+    WIN: 0x2ecc71,
+    LOSE: 0xe74c3c,
+    BLACKJACK: 0xf1c40f
 };
 
 const suits = ["♠", "♥", "♦", "♣"];
@@ -47,12 +47,8 @@ module.exports = {
         .setDescription("Play a game of blackjack!"),
     async execute(interaction) {
         let user = await User.findOne({ userId: interaction.user.id });
-
         if (!user || user.money < 10) {
-            return interaction.reply({
-                content: `You do not have enough money to play Blackjack! You need at least $10! Chat to earn money. You can check how much money you have by typing \`/rank\`.`,
-                ephemeral: true
-            });
+            return interaction.reply({ content: "You do not have enough money to play Blackjack! You need at least $10!", ephemeral: true });
         }
 
         startRound(interaction, user);
@@ -74,7 +70,9 @@ module.exports = {
                 .setColor(Colors.PLAYER);
 
             // Send ephemeral message and fetch it
-            const gameMessage = await interaction.reply({ embeds: [embed], components: [buttonsRow], ephemeral: true, fetchReply: true });
+            const gameMessage = interaction.replied || interaction.deferred
+                ? await interaction.followUp({ embeds: [embed], components: [buttonsRow], ephemeral: true, fetchReply: true })
+                : await interaction.reply({ embeds: [embed], components: [buttonsRow], ephemeral: true, fetchReply: true });
 
             const collector = gameMessage.createMessageComponentCollector({
                 filter: i => i.user.id === interaction.user.id,
@@ -128,6 +126,7 @@ module.exports = {
 
             const playerTotal = handValue(playerHand);
             const dealerTotal = handValue(dealerHand);
+
             let resultText="", resultColor=Colors.LOSE, points=0, money=0;
 
             if (playerTotal===21 && playerHand.length===2 && dealerTotal !== 21) {
@@ -171,16 +170,16 @@ module.exports = {
                 components: [playAgainRow]
             });
 
-            const playAgainCollector = interaction.channel.createMessageComponentCollector({
+            const collector = interaction.channel.createMessageComponentCollector({
                 filter: i => i.user.id === user.userId && i.customId === "playAgain",
                 max: 1,
                 time: 60000
             });
 
-            playAgainCollector.on("collect", async i => {
-                playAgainCollector.stop();
-                await i.deferUpdate();
-                startRound(i, user);
+            collector.on("collect", async i => {
+                collector.stop();
+                await i.deferUpdate(); // safely acknowledge the button
+                startRound(i, user); // start a new ephemeral round
             });
         }
     }
