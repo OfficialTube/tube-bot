@@ -35,7 +35,7 @@ function handValue(hand) {
 }
 
 function handToString(hand, hideSecond=false) {
-    return hand.map((c,i)=> hideSecond && i===1 ? "[??]" : `${c.value}${c.suit}`).join(" · ");
+    return hand.map((c, i) => hideSecond && i === 1 ? "[??]" : `${c.value}${c.suit}`).join(" · ");
 }
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -45,19 +45,15 @@ module.exports = {
         .setName("blackjack")
         .setDescription("Play a game of blackjack!"),
     async execute(interaction) {
-        let user = await User.findOne({ userId: interaction.user.id });
+        const user = await User.findOne({ userId: interaction.user.id });
 
         if (!user || user.money < 10) {
-            return interaction.reply({
-                content: `You do not have enough money to play Blackjack! You need at least $10!`,
-                ephemeral: true
-            });
+            return interaction.reply({ content: "You do not have enough money to play Blackjack! You need at least $10!", ephemeral: true });
         }
 
-        // Start the game
-        await startRound(interaction, user);
+        await playRound(interaction, user);
 
-        async function startRound(interaction, user) {
+        async function playRound(interaction, user) {
             const deck = createDeck();
             const playerHand = [drawCard(deck), drawCard(deck)];
             const dealerHand = [drawCard(deck), drawCard(deck)];
@@ -68,16 +64,20 @@ module.exports = {
                     new ButtonBuilder().setCustomId("stand").setLabel("Stand").setStyle(ButtonStyle.Danger)
                 );
 
-            const embed = new EmbedBuilder()
-                .setTitle("🃏 Blackjack")
-                .setDescription(
-                    `**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n`+
-                    `**Dealer:** ${handToString(dealerHand,true)}`
-                )
-                .setColor(Colors.PLAYER);
-
-            // Initial ephemeral message
-            const message = await interaction.reply({ embeds: [embed], components: [buttons], ephemeral: true, fetchReply: true });
+            // Send initial ephemeral message
+            const message = await interaction.reply({
+                embeds: [new EmbedBuilder()
+                    .setTitle("🃏 Blackjack")
+                    .setDescription(
+                        `**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n` +
+                        `**Dealer:** ${handToString(dealerHand, true)}`
+                    )
+                    .setColor(Colors.PLAYER)
+                ],
+                components: [buttons],
+                ephemeral: true,
+                fetchReply: true
+            });
 
             const collector = message.createMessageComponentCollector({
                 filter: i => i.user.id === interaction.user.id,
@@ -98,7 +98,7 @@ module.exports = {
                                 .setTitle("🃏 Blackjack")
                                 .setDescription(
                                     `**Your hand:** ${handToString(playerHand)} (**${total}**)\n` +
-                                    `**Dealer:** ${handToString(dealerHand,true)}`
+                                    `**Dealer:** ${handToString(dealerHand, true)}`
                                 )
                                 .setColor(Colors.PLAYER)
                             ],
@@ -112,22 +112,9 @@ module.exports = {
             });
 
             async function dealerTurn(i, playerHand, dealerHand) {
-                await i.update({
-                    embeds: [new EmbedBuilder()
-                        .setTitle("🃏 Dealer's Turn")
-                        .setDescription(
-                            `**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n` +
-                            `**Dealer:** ${handToString(dealerHand)}`
-                        )
-                        .setColor(Colors.DEALER)
-                    ],
-                    components: []
-                });
-
                 while (handValue(dealerHand) < 17) {
-                    await sleep(1000);
                     dealerHand.push(drawCard(deck));
-                    await i.editReply({
+                    await i.update({
                         embeds: [new EmbedBuilder()
                             .setTitle("🃏 Dealer's Turn")
                             .setDescription(
@@ -138,8 +125,8 @@ module.exports = {
                         ],
                         components: []
                     });
+                    await sleep(1000);
                 }
-
                 await endGame(i, playerHand, dealerHand);
             }
 
@@ -167,9 +154,9 @@ module.exports = {
                 }
 
                 user.money += money;
-                user.rounds = (user.rounds || 0)+1;
+                user.rounds = (user.rounds || 0) + 1;
                 user.moneyGained = (user.moneyGained||0) + Math.max(0, money);
-                user.moneyLost = (user.moneyLost||0) + Math.max(0,-money);
+                user.moneyLost = (user.moneyLost||0) + Math.max(0, -money);
                 user.moneyNet = user.moneyGained - user.moneyLost;
                 user.points = (user.points||0) + points;
                 if (user.streakCurrent > (user.streakBest||0)) user.streakBest = user.streakCurrent;
@@ -180,7 +167,7 @@ module.exports = {
                         new ButtonBuilder().setCustomId("playAgain").setLabel("Play Again").setStyle(ButtonStyle.Primary)
                     );
 
-                await i.editReply({
+                await i.update({
                     embeds: [new EmbedBuilder()
                         .setTitle("🏁 Results")
                         .setDescription(
@@ -201,7 +188,7 @@ module.exports = {
 
                 playAgainCollector.on("collect", async b => {
                     await b.deferUpdate();
-                    startRound(interaction, user);
+                    playRound(interaction, user);
                 });
             }
         }
