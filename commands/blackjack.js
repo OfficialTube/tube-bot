@@ -54,12 +54,12 @@ module.exports = {
             });
         }
 
-        // Start first game
-        await playRound(interaction, user);
+        // Start first round
+        await playRound(interaction, user, true);
     }
 };
 
-async function playRound(interaction, user) {
+async function playRound(interaction, user, firstRound = false) {
     const deck = createDeck();
     const playerHand = [drawCard(deck), drawCard(deck)];
     const dealerHand = [drawCard(deck), drawCard(deck)];
@@ -78,8 +78,13 @@ async function playRound(interaction, user) {
         )
         .setColor(Colors.PLAYER);
 
-    // Always follow-up to avoid InteractionAlreadyReplied
-    const msg = await interaction.followUp({ embeds: [embed], components: [row], ephemeral: true });
+    // Reply first round, followUp on subsequent rounds
+    let msg;
+    if (firstRound) {
+        msg = await interaction.reply({ embeds: [embed], components: [row], ephemeral: true, fetchReply: true });
+    } else {
+        msg = await interaction.followUp({ embeds: [embed], components: [row], ephemeral: true, fetchReply: true });
+    }
 
     const collector = msg.createMessageComponentCollector({
         filter: i => i.user.id === interaction.user.id,
@@ -110,7 +115,6 @@ async function playRound(interaction, user) {
             }
         } else if (i.customId === "stand") {
             collector.stop();
-            // Dealer's turn
             await dealerTurn(interaction, i, user, playerHand, dealerHand);
         }
     });
@@ -129,7 +133,7 @@ async function dealerTurn(interaction, button, user, playerHand, dealerHand) {
     while(handValue(dealerHand) < 17) {
         await sleep(1000);
         dealerHand.push(drawCard(deck=[]));
-        await interaction.editReply({
+        await button.editReply({
             embeds: [new EmbedBuilder()
                 .setTitle("🃏 Dealer's Turn")
                 .setDescription(`**Your hand:** ${handToString(playerHand)} (**${handValue(playerHand)}**)\n` +
@@ -139,7 +143,6 @@ async function dealerTurn(interaction, button, user, playerHand, dealerHand) {
         });
     }
 
-    // Determine results
     const playerTotal = handValue(playerHand);
     const dealerTotal = handValue(dealerHand);
 
@@ -170,7 +173,7 @@ async function endGame(interaction, button, user, playerHand, dealerHand, result
         components: [playAgainRow]
     });
 
-    const collector = interaction.channel.createMessageComponentCollector({
+    const collector = button.channel.createMessageComponentCollector({
         filter: i => i.user.id === interaction.user.id && i.customId === "playAgain",
         time: 60000
     });
@@ -178,6 +181,6 @@ async function endGame(interaction, button, user, playerHand, dealerHand, result
     collector.on("collect", async i => {
         collector.stop();
         await i.deferUpdate();
-        await playRound(interaction, user);
+        await playRound(interaction, user, false);
     });
 }
