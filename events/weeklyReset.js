@@ -52,22 +52,6 @@ module.exports = (client) => {
         }
 
         user.pxp = (user.pxp || 0) + bonusPxp;
-        while (user.pxp >= 10)
-        {
-          user.pxp -= 10;
-          user.xp++
-          user.totalxp++;
-          user.money++;
-        }
-
-        let leveledUp = false;
-        while (user.xp >= user.levelxp) {
-          user.xp -= user.levelxp;
-          user.level++;
-          user.money += (user.level * 10);
-          user.levelxp += user.level;
-          leveledUp = true;
-        }
 
 
         const visibleBonus = Math.floor(bonusPxp / 10);

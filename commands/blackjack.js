@@ -152,7 +152,7 @@ module.exports = {
                 let resultText="", resultColor=Colors.LOSE, points=0, money=0;
 
                 // Check for blackjack
-                if (playerTotal===21 && playerHand.length===2) 
+                if (playerTotal===21 && playerHand.length===2 && (dealerHand.length !== 2 || dealerTotal !== 21)) 
                     { 
                         resultText="Blackjack!"; 
                         user.streakCurrent++; 
@@ -173,23 +173,6 @@ module.exports = {
                         }
                         user.points += (points * streak);
                         user.pxp += 15
-                        while (user.pxp >= 10)
-                        {
-                        user.pxp -= 10;
-                        user.xp++
-                        user.totalxp++;
-                        user.weeklyxp++;
-                        user.money++;
-                        }
-
-                        let leveledUp = false;
-                        while (user.xp >= user.levelxp) {
-                        user.xp -= user.levelxp;
-                        user.level++;
-                        user.money += (user.level * 10);
-                        user.levelxp += user.level;
-                        leveledUp = true;
-                        }
                         await user.save();
                     }
 
@@ -230,23 +213,6 @@ module.exports = {
                     }
                     user.points += (points * streak);
                     user.pxp += 10;
-                    while (user.pxp >= 10)
-                    {
-                    user.pxp -= 10;
-                    user.xp++
-                    user.totalxp++;
-                    user.weeklyxp++;
-                    user.money++;
-                    }
-
-                    let leveledUp = false;
-                    while (user.xp >= user.levelxp) {
-                    user.xp -= user.levelxp;
-                    user.level++;
-                    user.money += (user.level * 10);
-                    user.levelxp += user.level;
-                    leveledUp = true;
-                    }
                     await user.save();
 
                 }
