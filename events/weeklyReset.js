@@ -8,10 +8,20 @@ const YAPPER_ROLE_ID = '1432793828334632981';
 const LOG_CHANNEL_ID = '1379723391417978930';
 
 module.exports = (client) => {
-  cron.schedule('20 0 * * 0', async () => {
+  cron.schedule('35 0 * * 0', async () => {
     try {
       const guild = await client.guilds.fetch(GUILD_ID);
-      const members = await guild.members.fetch();
+      const members = new Map();
+
+      for (const userData of allUsers) {
+        try {
+          const member = await guild.members.fetch(userData.userId);
+          members.set(userData.userId, member);
+        } catch {
+          // Member not found (probably left the server)
+        }
+      }
+
 
       const allUsers = await User.find({ weeklyxp: { $gt: 0 } })
         .sort({ weeklyxp: -1 });
