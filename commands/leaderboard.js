@@ -4,9 +4,14 @@ const { logOffline } = require("../utils/logger");
 
 function formatNumber(n)
 {
-  if (n >= 10_000)
+  if (n == null || isNaN(n)) return "0";
+  if (n >= 100_000)
   {
-    return (n / 1_000).toFixed(3).replace(/\.?0+$/, "") + "k";
+    return (n / 1_000).toFixed(1).replace(/\.?0+$/, "") + "k";
+  }
+  else if (n >= 10_000)
+  {
+    return (n/1_000).toFixed(2).replace(/\.?0+$/, "") + "k";
   } 
   else
   {
