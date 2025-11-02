@@ -9,7 +9,7 @@ const LOG_CHANNEL_ID = '1379723391417978930';
 
 module.exports = (client) => {
   cron.schedule(
-    '38 0 * * 0', // Runs Sundays 00:20 UTC (8:20 PM Saturday Eastern)
+    '5 0 * * 0', // Runs Sundays 00:05 UTC
     async () => {
       try {
         const guild = await client.guilds.fetch(GUILD_ID);
@@ -62,9 +62,9 @@ module.exports = (client) => {
           else if (i === 2) bonusPxp = Math.floor(weeklyVisible / 5);
 
           user.pxp = (user.pxp || 0) + bonusPxp;
+          user.weeklyxp = Math.max(0, (user.weeklyxp || 0) - Math.floor(bonusPxp / 10));
           const visibleBonus = Math.floor(bonusPxp / 10);
 
-          user.weeklyxp = 0;
           await user.save();
 
           rewardInfo.push({
