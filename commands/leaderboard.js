@@ -135,7 +135,7 @@ module.exports = {
       }
       
       if (rank > 5) {
-        const username = (await interaction.client.users.fetch(userId)).username;
+        const username = (await interaction.client.users.fetch(userId)).username.replace(/([*_`~|\\])/g, '\\$1');
         const xp = formatNumber(user.totalxp);
         leaderboardTextAll += `**${rank}\\. ${username} | ${xp} XP**\n`;
       }
@@ -156,7 +156,7 @@ module.exports = {
       }
       
       if (weeklyRank > 5) {
-        const username = (await interaction.client.users.fetch(userId)).username;
+        const username = (await interaction.client.users.fetch(userId)).username.replace(/([*_`~|\\])/g, '\\$1');
         const weeklyxp = formatNumber(user.weeklyxp);
         leaderboardTextWeekly += `**${weeklyRank}\\. ${username} | ${weeklyxp} XP**\n`;
       }
@@ -177,7 +177,7 @@ module.exports = {
       }
       
       if (blackjackPoints > 5) {
-        const username = (await interaction.client.users.fetch(userId)).username;
+        const username = (await interaction.client.users.fetch(userId)).username.replace(/([*_`~|\\])/g, '\\$1');
         const points = formatNumber(user.points);
         leaderboardTextBlackjack += `**${blackjackPoints}\\. ${username} | ${points} Points**`;
       }
