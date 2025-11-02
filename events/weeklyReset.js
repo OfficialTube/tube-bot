@@ -8,7 +8,7 @@ const YAPPER_ROLE_ID = '1432793828334632981';
 const LOG_CHANNEL_ID = '1379723391417978930';
 
 module.exports = (client) => {
-  cron.schedule('17 0 * * 0', async () => {
+  cron.schedule('20 0 * * 0', async () => {
     try {
       const guild = await client.guilds.fetch(GUILD_ID);
       const members = await guild.members.fetch();
