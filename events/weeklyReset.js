@@ -9,7 +9,7 @@ const LOG_CHANNEL_ID = '1379723391417978930';
 
 module.exports = (client) => {
   cron.schedule(
-    '5 0 * * 0', // Runs Sundays 00:05 UTC
+    '0 0 * * 0', // Runs Sundays 00:00 UTC
     async () => {
       try {
         const guild = await client.guilds.fetch(GUILD_ID);
