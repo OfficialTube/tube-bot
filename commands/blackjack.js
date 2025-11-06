@@ -40,7 +40,6 @@ function handToString(hand, hideSecond=false) {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// 🔒 Keep track of active games in memory
 const activeGames = new Set();
 
 module.exports = {
@@ -50,7 +49,6 @@ module.exports = {
     async execute(interaction) {
         const userId = interaction.user.id;
 
-        // Prevent duplicate active games per user
         if (activeGames.has(userId)) {
             return interaction.reply({
                 content: "🃏 You already have an active Blackjack game! Please finish that one first.",
@@ -58,7 +56,6 @@ module.exports = {
             });
         }
 
-        // Lock this user as in-game
         activeGames.add(userId);
 
         try {
@@ -170,7 +167,7 @@ module.exports = {
                     let resultText = "", resultColor = Colors.LOSE, points = 0, money = 0;
 
                     if (playerTotal === 21 && playerHand.length === 2 && (dealerHand.length !== 2 || dealerTotal !== 21)) {
-                        resultText = "Blackjack!";
+                        resultText = `Blackjack!\nMoney Earned: $${money}\nPoints Earned: ${points * streak} (${points} × ${streak} streak)`;
                         user.streakCurrent++;
                         points = 2;
                         money = 15;
@@ -187,7 +184,7 @@ module.exports = {
                         user.pxp += 15;
                         await user.save();
                     } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
-                        resultText = "You win!";
+                        resultText = `You win!\nMoney Earned: $${money}\nPoints Earned: ${points * streak} (${points} × ${streak} streak)`;
                         user.streakCurrent++;
                         points = 1;
                         money = 10;
@@ -203,7 +200,7 @@ module.exports = {
                         user.pxp += 10;
                         await user.save();
                     } else if (playerTotal < dealerTotal) {
-                        resultText = "You lose!";
+                        resultText = `You lose!\nMoney Earned: -$10\nPoints Earned: ${points}`;
                         points = -1;
                         money = -10;
                         user.streakCurrent = 0;
@@ -217,7 +214,7 @@ module.exports = {
                         user.points--;
                         await user.save();
                     } else {
-                        resultText = "Tie!";
+                        resultText = `Tie!\nMoney Earned: $${money}\nPoints Earned: ${points}`;
                         user.ties++;
                         user.rounds++;
                         user.streakCurrent = 0;
@@ -231,7 +228,7 @@ module.exports = {
                             .setDescription(
                                 `**Your hand:** ${handToString(playerHand)} (**${playerTotal}**)\n` +
                                 `**Dealer:** ${handToString(dealerHand)} (**${dealerTotal}**)\n\n` +
-                                `${resultText}\nMoney Earned: $${money}\nPoints Earned: ${points * streak} (${points} × ${streak} streak)`
+                                `${resultText}`
                             )
                             .setColor(resultColor)],
                         components: []
