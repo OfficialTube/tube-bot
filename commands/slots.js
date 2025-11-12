@@ -21,18 +21,25 @@ const {
   const moneyFormat = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
   
   // Choose a symbol based on odds
-  function spinSymbol() {
+  function spinSymbol(){
     const rand = Math.random();
     let sum = 0;
-    for (let i=0;i<odds.length;i++){
+    for(let i=0;i<odds.length;i++){
       sum += odds[i];
-      if (rand < sum) return i+1;
+      if(rand<sum) return i+1;
     }
     return 9;
   }
   
+  // Actual payout multiplier calculation
+  function getRealMultiplier(num,count){
+    let base = 1/odds[num-1];
+    if(count===2) base /= 2;  // halve for doubles
+    return base * HOUSE_EDGE;
+  }
+  
   // Animate reels individually
-  async function animateSlots(button, finalSlots, totalDuration = 5000, interval = 200) {
+  async function animateSlots(interaction, finalSlots, totalDuration = 5000, interval = 200) {
     return new Promise((resolve) => {
       const start = Date.now();
       const reelDone = [false,false,false];
@@ -40,13 +47,21 @@ const {
   
       async function spin() {
         const elapsed = Date.now() - start;
+        if(elapsed >= totalDuration){
+          displaySlots = finalSlots.map(n => numberEmojis[n-1]);
+          const embed = new EmbedBuilder()
+            .setTitle("🎰 Slot Machine")
+            .setColor(0x3498db)
+            .setDescription(displaySlots.join(" "));
+          try { await interaction.editReply({ embeds:[embed] }); } catch(err){}
+          return resolve();
+        }
   
-        // Update reels
-        for (let i=0;i<3;i++){
-          if (!reelDone[i] && elapsed >= ((i+1) * totalDuration/3)){
+        for(let i=0;i<3;i++){
+          if(!reelDone[i] && elapsed >= ((i+1) * totalDuration/3)){
             reelDone[i] = true;
             displaySlots[i] = numberEmojis[finalSlots[i]-1];
-          } else if (!reelDone[i]){
+          } else if(!reelDone[i]){
             displaySlots[i] = numberEmojis[Math.floor(Math.random()*9)];
           }
         }
@@ -56,9 +71,7 @@ const {
           .setColor(0x3498db)
           .setDescription(displaySlots.join(" "));
   
-        try { await button.editReply({ embeds:[embed] }); } catch(err){}
-  
-        if (elapsed >= totalDuration) return resolve();
+        try { await interaction.editReply({ embeds:[embed] }); } catch(err){}
         setTimeout(spin, interval);
       }
   
@@ -124,6 +137,13 @@ const {
         ));
         await button.update({components:disabledRows});
   
+        // Deduct bet immediately
+        user.money = +(user.money - bet).toFixed(2);
+        user.roundsSlots++;
+        user.moneyBetSlots += bet;
+        user.moneySpentSlots += bet;
+        await user.save();
+  
         // Generate final spin
         const finalSlots = [spinSymbol(), spinSymbol(), spinSymbol()];
   
@@ -140,39 +160,29 @@ const {
         if(matchNum){
           const num = parseInt(matchNum);
           const count = counts[num];
-          const isDouble = count===2;
-  
-          // Cosmetic multiplier for display
-          const shownMultiplier = isDouble 
-              ? displayedMultipliers.double[num-1] 
-              : displayedMultipliers.triple[num-1];
+          const isDouble = count === 2;
   
           // Real multiplier for calculation
-          let actualMultiplier = 1 / odds[num-1];
-          if (isDouble) actualMultiplier /= 2;
-          actualMultiplier *= HOUSE_EDGE;
+          const actualMultiplier = getRealMultiplier(num,count);
+  
+          // Displayed multiplier for text
+          const shownMultiplier = isDouble
+            ? displayedMultipliers.double[num-1]
+            : displayedMultipliers.triple[num-1];
   
           payout = +(bet * actualMultiplier).toFixed(2);
-  
-          // Deduct bet immediately
-          user.money = +(user.money - bet).toFixed(2);
-          user.roundsSlots++;
-          user.moneyBetSlots += bet;
-          user.moneySpentSlots += bet;
   
           // Update stats
           user.money += payout;
           user.moneyEarnedSlots += payout;
-          const fieldName = `${isDouble ? "double" : "triple"}${num}`;
+          const fieldName = `${isDouble?"double":"triple"}${num}`;
           user[fieldName] = (user[fieldName]||0)+1;
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
-          if(payout > user.maxWon) user.maxWon = payout;
+          if(payout>user.maxWon) user.maxWon = payout;
   
           resultText = isDouble
             ? `⭐ **DOUBLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`
             : `🎉 **TRIPLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`;
-        } else {
-          user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
         }
   
         await user.save();
