@@ -120,50 +120,47 @@ const {
           return button.reply({content:"❌ This isn’t your slot machine!", ephemeral:true});
   
         const bet = parseInt(button.customId.split("_")[1]);
-        if(user.money<bet) return button.reply({content:"❌ You don’t have enough money.", ephemeral:true});
-  
+        if(user.money < bet) return button.reply({content:"❌ You don’t have enough money.", ephemeral:true});
+
+        // Subtract bet immediately
+        user.money = +(user.money - bet).toFixed(2);
+
         const disabledRows = rows.map(row => new ActionRowBuilder().addComponents(
-          row.components.map(btn => new ButtonBuilder()
+        row.components.map(btn => new ButtonBuilder()
             .setCustomId(btn.data.custom_id)
             .setLabel(btn.data.label)
             .setStyle(ButtonStyle.Secondary)
             .setDisabled(true)
-          )
+        )
         ));
         await button.update({components:disabledRows});
-  
+
         const finalSlots = [spinSymbol(), spinSymbol(), spinSymbol()];
         await animateSlots(button, finalSlots, 5000, 200);
-  
-        const counts={};
-        for(const num of finalSlots) counts[num]=(counts[num]||0)+1;
-        const matchNum = Object.keys(counts).find(k=>counts[k]>1);
-  
+
+        const counts = {};
+        for(const num of finalSlots) counts[num] = (counts[num]||0) + 1;
+        const matchNum = Object.keys(counts).find(k => counts[k] > 1);
+
         let payout = 0;
         let resultText = "You lost!";
         if(matchNum){
-          const num = parseInt(matchNum);
-          const count = counts[num];
-  
-          const actualMultiplier = count===2 ? multipliers.double[num-1] : multipliers.triple[num-1];
-          const displayMultiplier = count===2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
-  
-          payout = +(bet * actualMultiplier).toFixed(2);
-  
-          user.money = +(user.money - bet + payout).toFixed(2);
-          user.roundsSlots++;
-          user.moneyBetSlots += bet;
-          user.moneySpentSlots += bet;
-          user.moneyEarnedSlots += payout;
-          const fieldName = `${count===2?"double":"triple"}${num}`;
-          user[fieldName] = (user[fieldName]||0)+1;
-          user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
-          if(payout>user.maxWon) user.maxWon = payout;
-  
-          resultText = count===3
+        const num = parseInt(matchNum);
+        const count = counts[num];
+
+        const actualMultiplier = count === 2 ? multipliers.double[num-1] : multipliers.triple[num-1];
+        const displayMultiplier = count === 2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
+
+        payout = +(bet * actualMultiplier).toFixed(2);
+
+        // Add the winnings
+        user.money = +(user.money + payout).toFixed(2);
+
+        resultText = count===3
             ? `🎉 **TRIPLE ${num}!** You won **${displayMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${displayMultiplier} = ${moneyFormat.format(payout)}`
             : `⭐ **DOUBLE ${num}!** You won **${displayMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${displayMultiplier} = ${moneyFormat.format(payout)}`;
-        } else {
+        }
+        else {
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
         }
   
