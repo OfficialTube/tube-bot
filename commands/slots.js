@@ -29,7 +29,7 @@ const {
       sum += odds[i];
       if (rand < sum) return i + 1;
     }
-    return 9; // fallback
+    return 9;
   }
   
   function getRealMultiplier(num, count) {
@@ -53,25 +53,32 @@ const {
         });
       }
   
-      // --- Buttons for bets ---
-      const row = new ActionRowBuilder().addComponents(
-        allowedBets.map((bet) =>
-          new ButtonBuilder()
-            .setCustomId(`slot_${bet}`)
-            .setLabel(`$${bet}`)
-            .setStyle(ButtonStyle.Primary)
-        )
-      );
+      // --- Split buttons into rows of max 5 ---
+      const rows = [];
+      for (let i = 0; i < allowedBets.length; i += 5) {
+        const slice = allowedBets.slice(i, i + 5);
+        const row = new ActionRowBuilder().addComponents(
+          slice.map((bet) =>
+            new ButtonBuilder()
+              .setCustomId(`slot_${bet}`)
+              .setLabel(`$${bet}`)
+              .setStyle(ButtonStyle.Primary)
+          )
+        );
+        rows.push(row);
+      }
   
       // --- Embed showing balance before spin ---
       const embed = new EmbedBuilder()
         .setTitle("🎰 Slot Machine")
-        .setDescription(`Pick a bet amount to spin!\n\n💰 **Your Balance:** ${moneyFormat.format(user.money.toFixed(2))}`)
+        .setDescription(
+          `Pick a bet amount to spin!\n\n💰 **Your Balance:** ${moneyFormat.format(user.money.toFixed(2))}`
+        )
         .setColor(0x3498db);
   
       const message = await interaction.reply({
         embeds: [embed],
-        components: [row],
+        components: rows,
         fetchReply: true,
       });
   
@@ -157,16 +164,19 @@ const {
       });
   
       collector.on("end", async () => {
-        const disabledRow = new ActionRowBuilder().addComponents(
-          allowedBets.map((bet) =>
-            new ButtonBuilder()
-              .setCustomId(`slot_disabled_${bet}`)
-              .setLabel(`$${bet}`)
-              .setStyle(ButtonStyle.Secondary)
-              .setDisabled(true)
+        // Disable all buttons after 30 seconds
+        const disabledRows = rows.map((row) =>
+          new ActionRowBuilder().addComponents(
+            row.components.map((btn) =>
+              new ButtonBuilder()
+                .setCustomId(`${btn.customId}_disabled`)
+                .setLabel(btn.label)
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(true)
+            )
           )
         );
-        await message.edit({ components: [disabledRow] });
+        await message.edit({ components: disabledRows });
       });
     },
   };
