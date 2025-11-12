@@ -94,7 +94,6 @@ const {
         }
   
         const bet = parseInt(button.customId.split("_")[1]);
-        await user.reload();
   
         if (user.money < bet) {
           return button.reply({ content: "❌ You don’t have enough money.", ephemeral: true });
