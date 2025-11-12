@@ -12,10 +12,12 @@ const {
   const odds = [0.25,0.20,0.15,0.12,0.10,0.07,0.05,0.04,0.02];
   const allowedBets = [1,5,10,50,100,500,1000];
   const HOUSE_EDGE = 0.97;
+  
   const displayedMultipliers = {
     double: [0.3,0.4,0.7,1,1.3,2.7,5,8,30],
     triple: [4,9,21,41,70,205,562,1098,8787],
   };
+  
   const moneyFormat = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
   
   function spinSymbol(){
@@ -70,7 +72,7 @@ const {
       let user = await User.findOne({userId:interaction.user.id});
       if(!user) return interaction.reply({content:"❌ You don’t have an account yet!", ephemeral:true});
   
-      // Create button rows (max 5 per row)
+      // Build button rows
       const rows=[];
       for(let i=0;i<allowedBets.length;i+=5){
         const slice = allowedBets.slice(i,i+5);
@@ -96,10 +98,14 @@ const {
         fetchReply:true
       });
   
-      const collector = message.createMessageComponentCollector({componentType:ComponentType.Button,time:30000});
+      const collector = message.createMessageComponentCollector({
+        componentType:ComponentType.Button,
+        time:30000
+      });
   
       collector.on("collect", async(button)=>{
-        if(button.user.id!==interaction.user.id) return button.reply({content:"❌ This isn’t your slot machine!", ephemeral:true});
+        if(button.user.id!==interaction.user.id)
+          return button.reply({content:"❌ This isn’t your slot machine!", ephemeral:true});
   
         const bet = parseInt(button.customId.split("_")[1]);
         if(user.money<bet) return button.reply({content:"❌ You don’t have enough money.", ephemeral:true});
@@ -110,7 +116,7 @@ const {
         user.moneyBetSlots += bet;
         user.moneySpentSlots += bet;
   
-        // Disable buttons
+        // Disable buttons while spinning
         const disabledRows = rows.map(row => new ActionRowBuilder().addComponents(
           row.components.map(btn => new ButtonBuilder()
             .setCustomId(btn.data.custom_id)
@@ -169,10 +175,6 @@ const {
           );
   
         await button.editReply({embeds:[resultEmbed], components:[]}); // final result
-      });
-  
-      collector.on("end", async()=>{
-        await message.edit({components:[]}); // safety
       });
     }
   };
