@@ -155,10 +155,10 @@ const {
         if(matchNum){
           const num = parseInt(matchNum);
           const count = counts[num];
-          payout = +(bet*getRealMultiplier(num,count)).toFixed(2);
+
   
           const shownMultiplier = count===2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
-  
+          payout = +(bet*shownMultiplier*HOUSE_EDGE).toFixed(2);  
           // Deduct bet immediately
           user.money = +(user.money - bet).toFixed(2);
           user.roundsSlots++;
