@@ -126,11 +126,7 @@ const {
         const bet = parseInt(button.customId.split("_")[1]);
         if(user.money<bet) return button.reply({content:"❌ You don’t have enough money.", ephemeral:true});
   
-        // Deduct bet immediately
-        user.money = +(user.money - bet).toFixed(2);
-        user.roundsSlots++;
-        user.moneyBetSlots += bet;
-        user.moneySpentSlots += bet;
+
   
         // Disable buttons during spin
         const disabledRows = rows.map(row => new ActionRowBuilder().addComponents(
@@ -163,6 +159,11 @@ const {
   
           const shownMultiplier = count===2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
   
+          // Deduct bet immediately
+          user.money = +(user.money - bet).toFixed(2);
+          user.roundsSlots++;
+          user.moneyBetSlots += bet;
+          user.moneySpentSlots += bet;
           // Update stats
           user.money += payout;
           user.moneyEarnedSlots += payout;
