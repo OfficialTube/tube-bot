@@ -11,14 +11,14 @@ const {
   const numberEmojis = ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"];
   const odds = [0.25,0.20,0.15,0.12,0.10,0.07,0.05,0.04,0.02];
   const allowedBets = [1,5,10,50,100,500,1000];
-  const HOUSE_EDGE = 0.03; // 3% edge
+  const HOUSE_EDGE = 0.97;
   
-  // Scaling factor to get ~3% house edge
+  // scale factor to give slight house edge (~3%)
   const G_current = 13.799537; // precomputed expected gross payout
-  const s = (1 - HOUSE_EDGE) / G_current;
+  const s = (1 - 0.03) / G_current;
   
   const displayedMultipliers = {
-    double: [0.3,0.4,0.7,1,1.3,2.7,5,8,30],  // rough visuals
+    double: [0.3,0.4,0.7,1,1.3,2.7,5,8,30],
     triple: [4,9,21,41,70,205,562,1098,8787],
   };
   
@@ -37,9 +37,8 @@ const {
   
   // Actual payout multiplier calculation
   function getRealMultiplier(num,count){
-    const base = 1/odds[num-1];        // total payout including bet
-    const scaled = base * s;           // scale for house edge
-    return count===2 ? scaled/2 : scaled;
+    const base = (1/odds[num-1]) * s * HOUSE_EDGE;
+    return count===2 ? base/2 : base;
   }
   
   // Animate reels individually
@@ -141,12 +140,6 @@ const {
         ));
         await button.update({components:disabledRows});
   
-        // Deduct bet immediately
-        user.money = +(user.money - bet).toFixed(2);
-        user.roundsSlots++;
-        user.moneyBetSlots += bet;
-        user.moneySpentSlots += bet;
-  
         // Generate final spin
         const finalSlots = [spinSymbol(), spinSymbol(), spinSymbol()];
   
@@ -164,10 +157,15 @@ const {
           const num = parseInt(matchNum);
           const count = counts[num];
   
-          const realMultiplier = getRealMultiplier(num,count);
           const shownMultiplier = count===2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
-  
+          const realMultiplier = getRealMultiplier(num,count);
           payout = +(bet * realMultiplier).toFixed(2);
+  
+          // Deduct bet immediately
+          user.money = +(user.money - bet).toFixed(2);
+          user.roundsSlots++;
+          user.moneyBetSlots += bet;
+          user.moneySpentSlots += bet;
   
           // Update stats
           user.money += payout;
