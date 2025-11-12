@@ -58,7 +58,7 @@ const {
         }
   
         for(let i=0;i<3;i++){
-          if(!reelDone[i] && elapsed >= (i * totalDuration/3)){
+          if(!reelDone[i] && elapsed >= ((i+1) * totalDuration/3)){
             reelDone[i] = true;
             displaySlots[i] = numberEmojis[finalSlots[i]-1];
           } else if(!reelDone[i]){
