@@ -31,11 +31,11 @@ const {
   function getRealMultiplier(num,count){
     const base = 1/odds[num-1];
     const adjusted = base*HOUSE_EDGE;
-    return count===2?adjusted/2:adjusted;
+    return count===2 ? adjusted/2 : adjusted;
   }
   
-  // Safe recursive animation
-  async function animateSlots(message, duration=5000, interval=500){
+  // Animate slots safely using button.editReply()
+  async function animateSlots(button, duration=5000, interval=500){
     const start = Date.now();
   
     async function spin(){
@@ -49,10 +49,10 @@ const {
         .setDescription(randomSlots.join(" "));
   
       try {
-        await message.edit({embeds:[embedSpin]});
+        await button.editReply({embeds:[embedSpin]});
       } catch(err){
         console.error("Failed to edit ephemeral spin:", err);
-        return;
+        return; // stop animation if message no longer exists
       }
   
       setTimeout(spin, interval);
@@ -70,7 +70,7 @@ const {
       let user = await User.findOne({userId:interaction.user.id});
       if(!user) return interaction.reply({content:"❌ You don’t have an account yet!", ephemeral:true});
   
-      // Split buttons into rows of max 5
+      // Create button rows (max 5 per row)
       const rows=[];
       for(let i=0;i<allowedBets.length;i+=5){
         const slice = allowedBets.slice(i,i+5);
@@ -110,7 +110,7 @@ const {
         user.moneyBetSlots += bet;
         user.moneySpentSlots += bet;
   
-        // Disable buttons immediately
+        // Disable buttons
         const disabledRows = rows.map(row => new ActionRowBuilder().addComponents(
           row.components.map(btn => new ButtonBuilder()
             .setCustomId(btn.data.custom_id)
@@ -121,10 +121,10 @@ const {
         ));
         await button.update({components:disabledRows});
   
-        // --- Animate for 5 seconds ---
+        // Animate slots
         await animateSlots(button, 5000, 500);
   
-        // --- Final spin ---
+        // Final spin
         const slots = [spinSymbol(), spinSymbol(), spinSymbol()];
         const display = slots.map(n=>numberEmojis[n-1]).join(" ");
   
@@ -137,11 +137,9 @@ const {
         if(matchNum){
           const num = parseInt(matchNum);
           const count = counts[num];
-          const multiplier = getRealMultiplier(num,count);
-          payout = +(bet*multiplier).toFixed(2);
+          payout = +(bet*getRealMultiplier(num,count)).toFixed(2);
   
           const shownMultiplier = count===2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
-          const displayTotal = +(bet*shownMultiplier).toFixed(2);
   
           // Update stats
           user.money += payout;
@@ -149,11 +147,11 @@ const {
           const fieldName = `${count===2?"double":"triple"}${num}`;
           user[fieldName] = (user[fieldName]||0)+1;
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
-          if(displayTotal>user.maxWon) user.maxWon = displayTotal;
+          if(payout>user.maxWon) user.maxWon = payout;
   
           resultText = count===3
-            ? `🎉 **TRIPLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(displayTotal)}`
-            : `⭐ **DOUBLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(displayTotal)}`;
+            ? `🎉 **TRIPLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`
+            : `⭐ **DOUBLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`;
         } else {
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
         }
@@ -174,7 +172,7 @@ const {
       });
   
       collector.on("end", async()=>{
-        await message.edit({components:[]}); // just in case
+        await message.edit({components:[]}); // safety
       });
     }
   };
