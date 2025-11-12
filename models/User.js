@@ -10,7 +10,9 @@ const userSchema = new mongoose.Schema({
   totalxp: {type: Number, default: 0},
   lastmsg: {type: Number, default: 0},
   weeklyxp: {type: Number, default: 0},
+
   money: {type: Number, default: 0},
+
   wins: {type: Number, default: 0},
   blackjacks: {type: Number, default: 0},
   losses: {type: Number, default: 0},
@@ -22,6 +24,31 @@ const userSchema = new mongoose.Schema({
   streakCurrent: {type: Number, default: 0},
   streakBest: {type: Number, default: 0},
   points: {type: Number, default: 0},
+
+  roundsSlots: {type: Number, default: 0},
+  moneyNetSlots: {type: Number, default: 0},
+  moneyEarnedSlots: {type: Number, default: 0},
+  moneySpentSlots: {type: Number, default: 0},
+  moneyBetSlots: {type: Number, default: 0},
+  double1: {type: Number, default: 0},
+  double2: {type: Number, default: 0},
+  double3: {type: Number, default: 0},
+  double4: {type: Number, default: 0},
+  double5: {type: Number, default: 0},
+  double6: {type: Number, default: 0},
+  double7: {type: Number, default: 0},
+  double8: {type: Number, default: 0},
+  double9: {type: Number, default: 0},
+  triple1: {type: Number, default: 0},
+  triple2: {type: Number, default: 0},
+  triple3: {type: Number, default: 0},
+  triple4: {type: Number, default: 0},
+  triple5: {type: Number, default: 0},
+  triple6: {type: Number, default: 0},
+  triple7: {type: Number, default: 0},
+  triple8: {type: Number, default: 0},
+  triple9: {type: Number, default: 0},  
+  maxWon: {type: Number, default: 0},
 });
 
 module.exports = mongoose.model("User", userSchema);
