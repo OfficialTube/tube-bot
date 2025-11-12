@@ -189,6 +189,7 @@ const {
         user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
   
         await user.save();
+        await house.save();
   
         const resultEmbed = new EmbedBuilder()
           .setColor(payout>0 ? 0x2ecc71 : 0xe74c3c)

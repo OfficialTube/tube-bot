@@ -123,6 +123,7 @@ module.exports = {
                         user.streakCurrent = 0;
                         user.points--;
                         await user.save();
+                        await house.save();
                     } else {
                         await i.update({
                             embeds: [new EmbedBuilder()
@@ -193,6 +194,7 @@ module.exports = {
                         user.pxp += 15;
                         resultText = `Blackjack!\nMoney Earned: $${money}\nPoints Earned: ${points * streak} (${points} × ${streak} streak)`;
                         await user.save();
+                        await house.save();
                     } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
                         user.streakCurrent++;
                         points = 1;
@@ -213,6 +215,7 @@ module.exports = {
                         user.pxp += 10;
                         resultText = `You win!\nMoney Earned: $${money}\nPoints Earned: ${points * streak} (${points} × ${streak} streak)`;
                         await user.save();
+                        await house.save();
                     } else if (playerTotal < dealerTotal) {
                         points = -1;
                         money = -10;
@@ -231,6 +234,7 @@ module.exports = {
                         user.points--;
                         resultText = `You lose!\nMoney Earned: -$10\nPoints Earned: ${points}`;
                         await user.save();
+                        await house.save();
                     } else {
                         user.ties++;
                         user.rounds++;
