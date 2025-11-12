@@ -20,6 +20,7 @@ const {
   
   const moneyFormat = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
   
+  // Choose a symbol based on odds
   function spinSymbol(){
     const rand = Math.random();
     let sum = 0;
@@ -30,37 +31,52 @@ const {
     return 9;
   }
   
+  // Actual payout multiplier calculation
   function getRealMultiplier(num,count){
     const base = 1/odds[num-1];
     const adjusted = base*HOUSE_EDGE;
     return count===2 ? adjusted/2 : adjusted;
   }
   
-  // Animate slots safely using button.editReply()
-  async function animateSlots(button, duration=5000, interval=500){
-    const start = Date.now();
+  // Animate reels individually
+  async function animateSlots(button, finalSlots, totalDuration = 5000, interval = 200) {
+    return new Promise((resolve) => {
+      const start = Date.now();
+      const reelDone = [false,false,false];
+      let displaySlots = ["❔","❔","❔"];
   
-    async function spin(){
-      const elapsed = Date.now() - start;
-      if(elapsed >= duration) return;
+      async function spin() {
+        const elapsed = Date.now() - start;
+        if(elapsed >= totalDuration){
+          displaySlots = finalSlots.map(n => numberEmojis[n-1]);
+          const embed = new EmbedBuilder()
+            .setTitle("🎰 Slot Machine")
+            .setColor(0x3498db)
+            .setDescription(displaySlots.join(" "));
+          try { await button.editReply({ embeds:[embed] }); } catch(err){}
+          return resolve();
+        }
   
-      const randomSlots = Array(3).fill(0).map(()=>numberEmojis[Math.floor(Math.random()*9)]);
-      const embedSpin = new EmbedBuilder()
-        .setTitle("🎰 Slot Machine")
-        .setColor(0x3498db)
-        .setDescription(randomSlots.join(" "));
+        for(let i=0;i<3;i++){
+          if(!reelDone[i] && elapsed >= (i * totalDuration/3)){
+            reelDone[i] = true;
+            displaySlots[i] = numberEmojis[finalSlots[i]-1];
+          } else if(!reelDone[i]){
+            displaySlots[i] = numberEmojis[Math.floor(Math.random()*9)];
+          }
+        }
   
-      try {
-        await button.editReply({embeds:[embedSpin]});
-      } catch(err){
-        console.error("Failed to edit ephemeral spin:", err);
-        return; // stop animation if message no longer exists
+        const embed = new EmbedBuilder()
+          .setTitle("🎰 Slot Machine")
+          .setColor(0x3498db)
+          .setDescription(displaySlots.join(" "));
+  
+        try { await button.editReply({ embeds:[embed] }); } catch(err){}
+        setTimeout(spin, interval);
       }
   
-      setTimeout(spin, interval);
-    }
-  
-    await spin();
+      spin();
+    });
   }
   
   module.exports = {
@@ -116,7 +132,7 @@ const {
         user.moneyBetSlots += bet;
         user.moneySpentSlots += bet;
   
-        // Disable buttons while spinning
+        // Disable buttons during spin
         const disabledRows = rows.map(row => new ActionRowBuilder().addComponents(
           row.components.map(btn => new ButtonBuilder()
             .setCustomId(btn.data.custom_id)
@@ -127,19 +143,19 @@ const {
         ));
         await button.update({components:disabledRows});
   
-        // Animate slots
-        await animateSlots(button, 5000, 500);
+        // Generate final spin
+        const finalSlots = [spinSymbol(), spinSymbol(), spinSymbol()];
   
-        // Final spin
-        const slots = [spinSymbol(), spinSymbol(), spinSymbol()];
-        const display = slots.map(n=>numberEmojis[n-1]).join(" ");
+        // Animate reels
+        await animateSlots(button, finalSlots, 5000, 200);
+  
+        // Calculate result
+        const counts={};
+        for(const num of finalSlots) counts[num]=(counts[num]||0)+1;
+        const matchNum = Object.keys(counts).find(k=>counts[k]>1);
   
         let payout = 0;
         let resultText = "You lost!";
-        const counts={};
-        for(const num of slots) counts[num]=(counts[num]||0)+1;
-        const matchNum = Object.keys(counts).find(k=>counts[k]>1);
-  
         if(matchNum){
           const num = parseInt(matchNum);
           const count = counts[num];
@@ -164,17 +180,18 @@ const {
   
         await user.save();
   
+        // Show final result
         const resultEmbed = new EmbedBuilder()
           .setColor(payout>0 ? 0x2ecc71 : 0xe74c3c)
           .setTitle("🎰 Slot Machine")
-          .setDescription(display)
+          .setDescription(finalSlots.map(n=>numberEmojis[n-1]).join(" "))
           .addFields(
             {name:"Bet",value:moneyFormat.format(bet),inline:true},
             {name:"Result",value:resultText,inline:false},
             {name:"New Balance",value:moneyFormat.format(user.money.toFixed(2)),inline:true}
           );
   
-        await button.editReply({embeds:[resultEmbed], components:[]}); // final result
+        await button.editReply({embeds:[resultEmbed], components:[]});
       });
     }
   };
