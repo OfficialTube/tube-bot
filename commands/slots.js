@@ -156,6 +156,8 @@ const {
         // Add the winnings
         user.money = +(user.money + payout).toFixed(2);
 
+        if(payout > (user.maxWon || 0)) user.maxWon = payout;
+
         resultText = count===3
             ? `🎉 **TRIPLE ${num}!** You won **${displayMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${displayMultiplier} = ${moneyFormat.format(payout)}`
             : `⭐ **DOUBLE ${num}!** You won **${displayMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${displayMultiplier} = ${moneyFormat.format(payout)}`;
