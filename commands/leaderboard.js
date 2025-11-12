@@ -2,6 +2,13 @@ const { SlashCommandBuilder } = require("discord.js");
 const User = require("../models/User");
 const { logOffline } = require("../utils/logger");
 
+const moneyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 function formatNumber(n)
 {
   if (n == null || isNaN(n)) return "0";
@@ -19,6 +26,15 @@ function formatNumber(n)
   }
 }
 
+function formatMoney(n)
+{
+  if (n == null || isNaN(n)) return "$0";
+  else
+  {
+    return moneyFormatter.format(n);
+  }
+}
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("leaderboard")
@@ -31,7 +47,8 @@ module.exports = {
         .addChoices(
           { name: "All Time", value: "total" },
           { name: "This Week", value: "week"},
-          { name: "Blackjack", value: "blackjack"}
+          { name: "Blackjack", value: "blackjack"},
+          { name: "Slots", value: "slots"}
         )
     ),
 
@@ -49,10 +66,12 @@ module.exports = {
       const allUsers = await User.find({guildId}).sort({totalxp: -1});
       const allWeeklyUsers = await User.find({guildId, weeklyxp: { $gt: 0 } }).sort({weeklyxp: -1});
       const allBlackjackUsers = await User.find({guildId, rounds: { $gt: 0 } }).sort({points: -1});
+      const allSlotsUsers = await User.find({guildId, roundsSlots: { $gt: 0 }}).sort({moneyEarnedSlots: -1});
       
       const rank = allUsers.findIndex(u => u.userId === userId) + 1;
       const weeklyRank = allWeeklyUsers.findIndex(u => u.userId === userId) + 1;
       const blackjackPoints = allBlackjackUsers.findIndex(u => u.userId === userId) + 1;
+      const slotsMoney = allSlotsUsers.findIndex(u => u.userId === userId) + 1;
 
       if (type === "total" || type === "week")
       {
@@ -109,6 +128,35 @@ module.exports = {
         return interaction.editReply({content: leaderboardText });
       }
 
+      if (type === "slots")
+      {
+        const isSlots = "slots";
+        const users = isSlots ? allSlotsUsers : null;
+        const top10 = users.slice(0, 10);
+        const categoryName = isSlots ? "Slots" : null;
+
+        let leaderboardText = `## **__Top 10 - ${categoryName}__**\n\n`;
+
+        for (let i = 0; i < top10.length; i++)
+        {
+          const u = top10[i];
+          const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
+          const xp = formatMoney(isSlots ? u.moneyEarnedSlots : null);
+
+          leaderboardText += `${i + 1}\\. ${u.userId === userId ? `**${username} | ${xp} Earned**` : `${username} | ${xp} Earned`}\n`
+        }
+
+        if (users.findIndex(u => u.userId === userId) >= 10)
+        {
+          const xp = formatMoney(isSlots ? user.moneyEarnedSlots : null);
+          const r = isSlots ? slotsMoney : null;
+          leaderboardText += `**${r}\\. ${targetUser.username} | ${xp} Earned**`;
+        }
+
+        return interaction.editReply({content: leaderboardText });
+      }
+
+
       const totalUsers = allUsers.length;
 
       const top5all = allUsers.slice(0, 5);
@@ -120,9 +168,13 @@ module.exports = {
       const totalBlackjackUsers = allBlackjackUsers.length;
       const top5BlackjackUsers = allBlackjackUsers.slice(0, 5);
 
+      const totalSlotsUsers = allSlotsUsers.length;
+      const top5SlotsUsers = allSlotsUsers.slice(0, 5);
+
       let leaderboardTextAll = `## **__All Time__**\n\n`;
       let leaderboardTextWeekly =  `## **__This Week__**\n\n`;
       let leaderboardTextBlackjack = `## **__Blackjack__**\n\n`;
+      let leaderboardTextSlots = `## ** __Slots__**\n\n`;
 
       for (let i = 0; i < top5all.length; i++) {
         const u = top5all[i];
@@ -187,7 +239,28 @@ module.exports = {
         leaderboardTextBlackjack += `**${blackjackPoints}\\. ${username} | ${points} Points**`;
       }
 
-      let leaderboardText = '# Top 5 Leaderboards\n' + leaderboardTextAll + leaderboardTextWeekly + leaderboardTextBlackjack;
+      for (let i = 0; i < top5SlotsUsers.length; i++) {
+        const u = top5SlotsUsers[i];
+        const position = i + 1;
+      
+        const username = (await interaction.client.users.fetch(u.userId)).username.replace(/([*_`~|\\])/g, '\\$1');
+        const moneyEarned = formatMoney(u.moneyEarnedSlots);
+      
+        const isSender = u.userId === userId;
+        const line = isSender
+          ? `**${position}\\. ${username} | ${moneyEarned} Earned**\n`
+          : `${position}\\. ${username} | ${moneyEarned} Earned\n`;
+        
+        leaderboardTextSlots += line;
+      }
+      
+      if (slotsMoney > 5) {
+        const username = (await interaction.client.users.fetch(userId)).username.replace(/([*_`~|\\])/g, '\\$1');
+        const moneyEarned = formatMoney(user.moneyEarnedSlots);
+        leaderboardTextSlots += `**${slotsMoney}\\. ${username} | ${moneyEarned} Earned**`;
+      }
+
+      let leaderboardText = '# Top 5 Leaderboards\n' + leaderboardTextAll + leaderboardTextWeekly + leaderboardTextBlackjack + leaderboardTextSlots;
 
       return interaction.editReply({
         content: leaderboardText 
