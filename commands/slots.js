@@ -13,6 +13,7 @@ const {
   const allowedBets = [1,5,10,50,100,500,1000];
   const HOUSE_EDGE = 0.97;
   
+  // Rough multipliers for display only
   const displayedMultipliers = {
     double: [0.3,0.4,0.7,1,1.3,2.7,5,8,30],
     triple: [4,9,21,41,70,205,562,1098,8787],
@@ -21,7 +22,7 @@ const {
   const moneyFormat = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
   
   // Choose a symbol based on odds
-  function spinSymbol() {
+  function spinSymbol(){
     const rand = Math.random();
     let sum = 0;
     for(let i=0;i<odds.length;i++){
@@ -31,11 +32,11 @@ const {
     return 9;
   }
   
-  // Real multiplier calculation
+  // Actual payout multiplier calculation
   function getRealMultiplier(num, count){
-    const base = 1 / odds[num-1];      // 1 / probability
-    const adjusted = base * HOUSE_EDGE; // apply 3% house edge
-    return count === 2 ? adjusted / 2 : adjusted; // halve if double
+    const base = 1 / odds[num-1];
+    const adjusted = base * HOUSE_EDGE;
+    return count === 2 ? adjusted / 2 : adjusted;
   }
   
   // Animate reels individually
@@ -144,8 +145,8 @@ const {
         await animateSlots(button, finalSlots, 5000, 200);
   
         // Calculate result
-        const counts = {};
-        for(const num of finalSlots) counts[num] = (counts[num]||0)+1;
+        const counts={};
+        for(const num of finalSlots) counts[num]=(counts[num]||0)+1;
         const matchNum = Object.keys(counts).find(k=>counts[k]>1);
   
         let payout = 0;
@@ -153,16 +154,12 @@ const {
         if(matchNum){
           const num = parseInt(matchNum);
           const count = counts[num];
-          const isDouble = count === 2;
   
-          // Actual multiplier
-          const actualMultiplier = getRealMultiplier(num, count);
-  
-          // Displayed multiplier for user
-          const shownMultiplier = isDouble ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
-  
-          // Correct payout
-          payout = +(bet * actualMultiplier).toFixed(2);
+          // Displayed multiplier (UI only)
+          const shownMultiplier = count===2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
+          // Real multiplier (actual payout)
+          const realMultiplier = getRealMultiplier(num, count);
+          payout = +(bet * realMultiplier).toFixed(2);
   
           // Deduct bet and update stats
           user.money = +(user.money - bet).toFixed(2);
@@ -172,14 +169,15 @@ const {
   
           user.money += payout;
           user.moneyEarnedSlots += payout;
-          const fieldName = `${isDouble?"double":"triple"}${num}`;
-          user[fieldName] = (user[fieldName]||0) + 1;
-          user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
-          if(payout > user.maxWon) user.maxWon = payout;
   
-          resultText = isDouble
-              ? `⭐ **DOUBLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`
-              : `🎉 **TRIPLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`;
+          const fieldName = `${count===2?"double":"triple"}${num}`;
+          user[fieldName] = (user[fieldName]||0)+1;
+          user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
+          if(payout>user.maxWon) user.maxWon = payout;
+  
+          resultText = count===3
+            ? `🎉 **TRIPLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`
+            : `⭐ **DOUBLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`;
         } else {
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
         }
