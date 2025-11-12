@@ -21,7 +21,7 @@ const {
   const moneyFormat = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
   
   // Choose a symbol based on odds
-  function spinSymbol(){
+  function spinSymbol() {
     const rand = Math.random();
     let sum = 0;
     for(let i=0;i<odds.length;i++){
@@ -31,15 +31,15 @@ const {
     return 9;
   }
   
-  // Actual payout multiplier calculation
-  function getRealMultiplier(num,count){
-    let base = 1/odds[num-1];
-    if(count===2) base /= 2;  // halve for doubles
-    return base * HOUSE_EDGE;
+  // Real multiplier calculation
+  function getRealMultiplier(num, count){
+    const base = 1 / odds[num-1];      // 1 / probability
+    const adjusted = base * HOUSE_EDGE; // apply 3% house edge
+    return count === 2 ? adjusted / 2 : adjusted; // halve if double
   }
   
   // Animate reels individually
-  async function animateSlots(interaction, finalSlots, totalDuration = 5000, interval = 200) {
+  async function animateSlots(button, finalSlots, totalDuration = 5000, interval = 200) {
     return new Promise((resolve) => {
       const start = Date.now();
       const reelDone = [false,false,false];
@@ -53,7 +53,7 @@ const {
             .setTitle("🎰 Slot Machine")
             .setColor(0x3498db)
             .setDescription(displaySlots.join(" "));
-          try { await interaction.editReply({ embeds:[embed] }); } catch(err){}
+          try { await button.editReply({ embeds:[embed] }); } catch(err){}
           return resolve();
         }
   
@@ -71,7 +71,7 @@ const {
           .setColor(0x3498db)
           .setDescription(displaySlots.join(" "));
   
-        try { await interaction.editReply({ embeds:[embed] }); } catch(err){}
+        try { await button.editReply({ embeds:[embed] }); } catch(err){}
         setTimeout(spin, interval);
       }
   
@@ -137,13 +137,6 @@ const {
         ));
         await button.update({components:disabledRows});
   
-        // Deduct bet immediately
-        user.money = +(user.money - bet).toFixed(2);
-        user.roundsSlots++;
-        user.moneyBetSlots += bet;
-        user.moneySpentSlots += bet;
-        await user.save();
-  
         // Generate final spin
         const finalSlots = [spinSymbol(), spinSymbol(), spinSymbol()];
   
@@ -151,8 +144,8 @@ const {
         await animateSlots(button, finalSlots, 5000, 200);
   
         // Calculate result
-        const counts={};
-        for(const num of finalSlots) counts[num]=(counts[num]||0)+1;
+        const counts = {};
+        for(const num of finalSlots) counts[num] = (counts[num]||0)+1;
         const matchNum = Object.keys(counts).find(k=>counts[k]>1);
   
         let payout = 0;
@@ -162,27 +155,33 @@ const {
           const count = counts[num];
           const isDouble = count === 2;
   
-          // Real multiplier for calculation
-          const actualMultiplier = getRealMultiplier(num,count);
+          // Actual multiplier
+          const actualMultiplier = getRealMultiplier(num, count);
   
-          // Displayed multiplier for text
-          const shownMultiplier = isDouble
-            ? displayedMultipliers.double[num-1]
-            : displayedMultipliers.triple[num-1];
+          // Displayed multiplier for user
+          const shownMultiplier = isDouble ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
   
+          // Correct payout
           payout = +(bet * actualMultiplier).toFixed(2);
   
-          // Update stats
+          // Deduct bet and update stats
+          user.money = +(user.money - bet).toFixed(2);
+          user.roundsSlots++;
+          user.moneyBetSlots += bet;
+          user.moneySpentSlots += bet;
+  
           user.money += payout;
           user.moneyEarnedSlots += payout;
           const fieldName = `${isDouble?"double":"triple"}${num}`;
-          user[fieldName] = (user[fieldName]||0)+1;
+          user[fieldName] = (user[fieldName]||0) + 1;
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
-          if(payout>user.maxWon) user.maxWon = payout;
+          if(payout > user.maxWon) user.maxWon = payout;
   
           resultText = isDouble
-            ? `⭐ **DOUBLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`
-            : `🎉 **TRIPLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`;
+              ? `⭐ **DOUBLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`
+              : `🎉 **TRIPLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`;
+        } else {
+          user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
         }
   
         await user.save();
