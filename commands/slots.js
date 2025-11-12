@@ -83,6 +83,8 @@ const {
   
     async execute(interaction){
       let user = await User.findOne({userId:interaction.user.id});
+      const HOUSE_ID = '464597977798017024';
+      let house = await User.findOne({ userId: HOUSE_ID});
       if(!user) return interaction.reply({content:"❌ You don’t have an account yet!", ephemeral:true});
   
       const rows=[];
@@ -124,6 +126,10 @@ const {
   
         // Subtract bet immediately
         user.money = +(user.money - bet).toFixed(2);
+        if(interaction.user.id !== HOUSE_ID)
+        {
+            house.money = +(house.money + bet).toFixed(2);
+        }
   
         // Always update rounds, money bet, money spent
         user.roundsSlots = (user.roundsSlots || 0) + 1;
@@ -161,6 +167,10 @@ const {
   
           // Add winnings
           user.money = +(user.money + payout).toFixed(2);
+          if(interaction.user.id !== HOUSE_ID)
+            {
+                house.money = +(house.money - payout).toFixed(2);
+            }
           user.moneyEarnedSlots = +(user.moneyEarnedSlots || 0) + payout;
   
           // Update max win

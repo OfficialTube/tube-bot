@@ -60,6 +60,8 @@ module.exports = {
 
         try {
             let user = await User.findOne({ userId });
+            const HOUSE_ID = '464597977798017024';
+            let house = await User.findOne({ userId: HOUSE_ID});
             if (!user || user.money < 10) {
                 activeGames.delete(userId);
                 return interaction.reply({
@@ -109,6 +111,10 @@ module.exports = {
                                 .setColor(Colors.LOSE)],
                             components: []
                         });
+                        if(interaction.user.id !== HOUSE_ID)
+                        {
+                            house.money+=10;
+                        }
                         user.money -= 10;
                         user.losses++;
                         user.rounds++;
@@ -171,6 +177,10 @@ module.exports = {
                         points = 2;
                         money = 15;
                         resultColor = Colors.BLACKJACK;
+                        if(interaction.user.id !== HOUSE_ID)
+                        {
+                            house.money-=money;
+                        }
                         user.money += money;
                         user.wins++;
                         user.blackjacks++;
@@ -188,6 +198,10 @@ module.exports = {
                         points = 1;
                         money = 10;
                         resultColor = Colors.WIN;
+                        if(interaction.user.id !== HOUSE_ID)
+                        {
+                            house.money-=money;
+                        }
                         user.money += money;
                         user.wins++;
                         user.rounds++;
@@ -204,6 +218,10 @@ module.exports = {
                         money = -10;
                         user.streakCurrent = 0;
                         resultColor = Colors.LOSE;
+                        if(interaction.user.id !== HOUSE_ID)
+                        {
+                            house.money+=10;
+                        }
                         user.money += money;
                         user.losses++;
                         user.rounds++;
