@@ -34,6 +34,33 @@ const {
     return count===2?adjusted/2:adjusted;
   }
   
+  // Safe recursive animation
+  async function animateSlots(message, duration=5000, interval=500){
+    const start = Date.now();
+  
+    async function spin(){
+      const elapsed = Date.now() - start;
+      if(elapsed >= duration) return;
+  
+      const randomSlots = Array(3).fill(0).map(()=>numberEmojis[Math.floor(Math.random()*9)]);
+      const embedSpin = new EmbedBuilder()
+        .setTitle("🎰 Slot Machine")
+        .setColor(0x3498db)
+        .setDescription(randomSlots.join(" "));
+  
+      try {
+        await message.edit({embeds:[embedSpin]});
+      } catch(err){
+        console.error("Failed to edit ephemeral spin:", err);
+        return;
+      }
+  
+      setTimeout(spin, interval);
+    }
+  
+    await spin();
+  }
+  
   module.exports = {
     data: new SlashCommandBuilder()
       .setName("slots")
@@ -43,7 +70,7 @@ const {
       let user = await User.findOne({userId:interaction.user.id});
       if(!user) return interaction.reply({content:"❌ You don’t have an account yet!", ephemeral:true});
   
-      // --- Split buttons into rows of max 5 ---
+      // Split buttons into rows of max 5
       const rows=[];
       for(let i=0;i<allowedBets.length;i+=5){
         const slice = allowedBets.slice(i,i+5);
@@ -94,27 +121,8 @@ const {
         ));
         await button.update({components:disabledRows});
   
-        // --- Animation ---
-        const spinDuration = 5000;
-        const intervalTime = 500;
-        let elapsed = 0;
-  
-        const embedSpin = new EmbedBuilder()
-          .setTitle("🎰 Slot Machine")
-          .setColor(0x3498db)
-          .setDescription("Spinning...");
-  
-        const spinMessage = await button.editReply({embeds:[embedSpin]});
-  
-        const spinner = setInterval(async()=>{
-          elapsed += intervalTime;
-          const randomSlots = Array(3).fill(0).map(()=>numberEmojis[Math.floor(Math.random()*9)]);
-          embedSpin.setDescription(randomSlots.join(" "));
-          await spinMessage.edit({embeds:[embedSpin]});
-          if(elapsed>=spinDuration) clearInterval(spinner);
-        }, intervalTime);
-  
-        await new Promise(res=>setTimeout(res,spinDuration));
+        // --- Animate for 5 seconds ---
+        await animateSlots(button, 5000, 500);
   
         // --- Final spin ---
         const slots = [spinSymbol(), spinSymbol(), spinSymbol()];
@@ -162,12 +170,11 @@ const {
             {name:"New Balance",value:moneyFormat.format(user.money.toFixed(2)),inline:true}
           );
   
-        await button.editReply({embeds:[resultEmbed],components:[]}); // remove buttons after spin
+        await button.editReply({embeds:[resultEmbed], components:[]}); // final result
       });
   
       collector.on("end", async()=>{
-        // Ensure buttons are removed after 30s
-        await message.edit({components:[]});
+        await message.edit({components:[]}); // just in case
       });
     }
   };
