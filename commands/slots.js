@@ -16,13 +16,12 @@ const {
     double: [0.3,0.4,0.7,1,1.3,2.7,5,8,30],
     triple: [4,9,21,41,70,205,562,1098,8787],
   };
+  const moneyFormat = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
   
-  const moneyFormat = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
-  
-  function spinSymbol() {
+  function spinSymbol(){
     const rand = Math.random();
     let sum = 0;
-    for (let i=0;i<odds.length;i++){
+    for(let i=0;i<odds.length;i++){
       sum += odds[i];
       if(rand<sum) return i+1;
     }
@@ -44,12 +43,16 @@ const {
       let user = await User.findOne({userId:interaction.user.id});
       if(!user) return interaction.reply({content:"❌ You don’t have an account yet!", ephemeral:true});
   
-      // Split buttons into rows of max 5
+      // --- Split buttons into rows of max 5 ---
       const rows=[];
       for(let i=0;i<allowedBets.length;i+=5){
         const slice = allowedBets.slice(i,i+5);
         const row = new ActionRowBuilder().addComponents(
-          slice.map(bet=>new ButtonBuilder().setCustomId(`slot_${bet}`).setLabel(`$${bet}`).setStyle(ButtonStyle.Primary))
+          slice.map(bet => new ButtonBuilder()
+            .setCustomId(`slot_${bet}`)
+            .setLabel(`$${bet}`)
+            .setStyle(ButtonStyle.Primary)
+          )
         );
         rows.push(row);
       }
@@ -59,11 +62,16 @@ const {
         .setDescription(`Pick a bet amount to spin!\n\n💰 **Your Balance:** ${moneyFormat.format(user.money.toFixed(2))}`)
         .setColor(0x3498db);
   
-      const message = await interaction.reply({embeds:[embed],components:rows,ephemeral:true,fetchReply:true});
+      const message = await interaction.reply({
+        embeds:[embed],
+        components: rows,
+        ephemeral:true,
+        fetchReply:true
+      });
   
       const collector = message.createMessageComponentCollector({componentType:ComponentType.Button,time:30000});
   
-      collector.on("collect",async(button)=>{
+      collector.on("collect", async(button)=>{
         if(button.user.id!==interaction.user.id) return button.reply({content:"❌ This isn’t your slot machine!", ephemeral:true});
   
         const bet = parseInt(button.customId.split("_")[1]);
@@ -75,24 +83,27 @@ const {
         user.moneyBetSlots += bet;
         user.moneySpentSlots += bet;
   
-        // Disable buttons during spin
-        const disabledRows = rows.map(row=>new ActionRowBuilder().addComponents(
-          row.components.map(btn=>new ButtonBuilder()
-            .setCustomId(btn.customId)
-            .setLabel(btn.label)
+        // Disable buttons immediately
+        const disabledRows = rows.map(row => new ActionRowBuilder().addComponents(
+          row.components.map(btn => new ButtonBuilder()
+            .setCustomId(btn.data.custom_id)
+            .setLabel(btn.data.label)
             .setStyle(ButtonStyle.Secondary)
-            .setDisabled(true))
+            .setDisabled(true)
+          )
         ));
         await button.update({components:disabledRows});
   
-        // Animation for 5s
+        // --- Animation ---
         const spinDuration = 5000;
         const intervalTime = 500;
         let elapsed = 0;
+  
         const embedSpin = new EmbedBuilder()
           .setTitle("🎰 Slot Machine")
           .setColor(0x3498db)
           .setDescription("Spinning...");
+  
         const spinMessage = await button.editReply({embeds:[embedSpin]});
   
         const spinner = setInterval(async()=>{
@@ -101,12 +112,12 @@ const {
           embedSpin.setDescription(randomSlots.join(" "));
           await spinMessage.edit({embeds:[embedSpin]});
           if(elapsed>=spinDuration) clearInterval(spinner);
-        },intervalTime);
+        }, intervalTime);
   
         await new Promise(res=>setTimeout(res,spinDuration));
   
-        // Final spin
-        const slots=[spinSymbol(),spinSymbol(),spinSymbol()];
+        // --- Final spin ---
+        const slots = [spinSymbol(), spinSymbol(), spinSymbol()];
         const display = slots.map(n=>numberEmojis[n-1]).join(" ");
   
         let payout = 0;
@@ -121,15 +132,14 @@ const {
           const multiplier = getRealMultiplier(num,count);
           payout = +(bet*multiplier).toFixed(2);
   
-          const shownMultiplier = count===2?displayedMultipliers.double[num-1]:displayedMultipliers.triple[num-1];
+          const shownMultiplier = count===2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
           const displayTotal = +(bet*shownMultiplier).toFixed(2);
   
+          // Update stats
           user.money += payout;
           user.moneyEarnedSlots += payout;
-  
           const fieldName = `${count===2?"double":"triple"}${num}`;
           user[fieldName] = (user[fieldName]||0)+1;
-  
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
           if(displayTotal>user.maxWon) user.maxWon = displayTotal;
   
@@ -143,7 +153,7 @@ const {
         await user.save();
   
         const resultEmbed = new EmbedBuilder()
-          .setColor(payout>0?0x2ecc71:0xe74c3c)
+          .setColor(payout>0 ? 0x2ecc71 : 0xe74c3c)
           .setTitle("🎰 Slot Machine")
           .setDescription(display)
           .addFields(
@@ -155,10 +165,10 @@ const {
         await button.editReply({embeds:[resultEmbed],components:[]}); // remove buttons after spin
       });
   
-      collector.on("end",async()=>{
-        // just in case, remove buttons after collector ends
+      collector.on("end", async()=>{
+        // Ensure buttons are removed after 30s
         await message.edit({components:[]});
       });
-    },
+    }
   };
   
