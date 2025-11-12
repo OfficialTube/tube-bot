@@ -11,9 +11,9 @@ const {
   const numberEmojis = ["1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣"];
   const odds = [0.25,0.20,0.15,0.12,0.10,0.07,0.05,0.04,0.02];
   const allowedBets = [1,5,10,50,100,500,1000];
-  const HOUSE_EDGE = 0.97;
+  const HOUSE_EDGE = 0.03; // 3% edge
   
-  // Rough multipliers for display only
+  // Display multipliers (rough estimate for UI)
   const displayedMultipliers = {
     double: [0.3,0.4,0.7,1,1.3,2.7,5,8,30],
     triple: [4,9,21,41,70,205,562,1098,8787],
@@ -21,49 +21,54 @@ const {
   
   const moneyFormat = new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"});
   
+  // Calculate scale factor s for 3% house edge
+  const G_current = 13.799537; // precomputed from your original multipliers
+  const s = (1 - HOUSE_EDGE) / G_current;
+  
   // Choose a symbol based on odds
-  function spinSymbol(){
+  function spinSymbol() {
     const rand = Math.random();
     let sum = 0;
-    for(let i=0;i<odds.length;i++){
+    for (let i = 0; i < odds.length; i++) {
       sum += odds[i];
-      if(rand<sum) return i+1;
+      if (rand < sum) return i + 1;
     }
     return 9;
   }
   
   // Actual payout multiplier calculation
-  function getRealMultiplier(num, count){
-    const base = 1 / odds[num-1];
-    const adjusted = base * HOUSE_EDGE;
-    return count === 2 ? adjusted / 2 : adjusted;
+  function getRealMultiplier(num, count) {
+    let base = 1 / odds[num - 1];      // base multiplier from odds
+    base = base * s;                   // scale to target house edge
+    if (count === 2) base /= 2;        // halve for doubles
+    return base;
   }
   
   // Animate reels individually
   async function animateSlots(button, finalSlots, totalDuration = 5000, interval = 200) {
     return new Promise((resolve) => {
       const start = Date.now();
-      const reelDone = [false,false,false];
-      let displaySlots = ["❔","❔","❔"];
+      const reelDone = [false, false, false];
+      let displaySlots = ["❔", "❔", "❔"];
   
       async function spin() {
         const elapsed = Date.now() - start;
-        if(elapsed >= totalDuration){
-          displaySlots = finalSlots.map(n => numberEmojis[n-1]);
+        if (elapsed >= totalDuration) {
+          displaySlots = finalSlots.map(n => numberEmojis[n - 1]);
           const embed = new EmbedBuilder()
             .setTitle("🎰 Slot Machine")
             .setColor(0x3498db)
             .setDescription(displaySlots.join(" "));
-          try { await button.editReply({ embeds:[embed] }); } catch(err){}
+          try { await button.editReply({ embeds: [embed] }); } catch (err) { }
           return resolve();
         }
   
-        for(let i=0;i<3;i++){
-          if(!reelDone[i] && elapsed >= ((i+1) * totalDuration/3)){
+        for (let i = 0; i < 3; i++) {
+          if (!reelDone[i] && elapsed >= ((i + 1) * totalDuration / 3)) {
             reelDone[i] = true;
-            displaySlots[i] = numberEmojis[finalSlots[i]-1];
-          } else if(!reelDone[i]){
-            displaySlots[i] = numberEmojis[Math.floor(Math.random()*9)];
+            displaySlots[i] = numberEmojis[finalSlots[i] - 1];
+          } else if (!reelDone[i]) {
+            displaySlots[i] = numberEmojis[Math.floor(Math.random() * 9)];
           }
         }
   
@@ -72,7 +77,7 @@ const {
           .setColor(0x3498db)
           .setDescription(displaySlots.join(" "));
   
-        try { await button.editReply({ embeds:[embed] }); } catch(err){}
+        try { await button.editReply({ embeds: [embed] }); } catch (err) { }
         setTimeout(spin, interval);
       }
   
@@ -85,14 +90,14 @@ const {
       .setName("slots")
       .setDescription("Spin the slot machine with buttons to select your bet!"),
   
-    async execute(interaction){
-      let user = await User.findOne({userId:interaction.user.id});
-      if(!user) return interaction.reply({content:"❌ You don’t have an account yet!", ephemeral:true});
+    async execute(interaction) {
+      let user = await User.findOne({ userId: interaction.user.id });
+      if (!user) return interaction.reply({ content: "❌ You don’t have an account yet!", ephemeral: true });
   
       // Build button rows
-      const rows=[];
-      for(let i=0;i<allowedBets.length;i+=5){
-        const slice = allowedBets.slice(i,i+5);
+      const rows = [];
+      for (let i = 0; i < allowedBets.length; i += 5) {
+        const slice = allowedBets.slice(i, i + 5);
         const row = new ActionRowBuilder().addComponents(
           slice.map(bet => new ButtonBuilder()
             .setCustomId(`slot_${bet}`)
@@ -109,23 +114,23 @@ const {
         .setColor(0x3498db);
   
       const message = await interaction.reply({
-        embeds:[embed],
+        embeds: [embed],
         components: rows,
-        ephemeral:true,
-        fetchReply:true
+        ephemeral: true,
+        fetchReply: true
       });
   
       const collector = message.createMessageComponentCollector({
-        componentType:ComponentType.Button,
-        time:30000
+        componentType: ComponentType.Button,
+        time: 30000
       });
   
-      collector.on("collect", async(button)=>{
-        if(button.user.id!==interaction.user.id)
-          return button.reply({content:"❌ This isn’t your slot machine!", ephemeral:true});
+      collector.on("collect", async (button) => {
+        if (button.user.id !== interaction.user.id)
+          return button.reply({ content: "❌ This isn’t your slot machine!", ephemeral: true });
   
         const bet = parseInt(button.customId.split("_")[1]);
-        if(user.money<bet) return button.reply({content:"❌ You don’t have enough money.", ephemeral:true});
+        if (user.money < bet) return button.reply({ content: "❌ You don’t have enough money.", ephemeral: true });
   
         // Disable buttons during spin
         const disabledRows = rows.map(row => new ActionRowBuilder().addComponents(
@@ -136,7 +141,7 @@ const {
             .setDisabled(true)
           )
         ));
-        await button.update({components:disabledRows});
+        await button.update({ components: disabledRows });
   
         // Generate final spin
         const finalSlots = [spinSymbol(), spinSymbol(), spinSymbol()];
@@ -145,20 +150,17 @@ const {
         await animateSlots(button, finalSlots, 5000, 200);
   
         // Calculate result
-        const counts={};
-        for(const num of finalSlots) counts[num]=(counts[num]||0)+1;
-        const matchNum = Object.keys(counts).find(k=>counts[k]>1);
+        const counts = {};
+        for (const num of finalSlots) counts[num] = (counts[num] || 0) + 1;
+        const matchNum = Object.keys(counts).find(k => counts[k] > 1);
   
         let payout = 0;
         let resultText = "You lost!";
-        if(matchNum){
+        if (matchNum) {
           const num = parseInt(matchNum);
           const count = counts[num];
   
-          // Displayed multiplier (UI only)
-          const shownMultiplier = count===2 ? displayedMultipliers.double[num-1] : displayedMultipliers.triple[num-1];
-          // Real multiplier (actual payout)
-          const realMultiplier = getRealMultiplier(num, count);
+          const realMultiplier = getRealMultiplier(num, count); // actual multiplier for payout
           payout = +(bet * realMultiplier).toFixed(2);
   
           // Deduct bet and update stats
@@ -170,32 +172,33 @@ const {
           user.money += payout;
           user.moneyEarnedSlots += payout;
   
-          const fieldName = `${count===2?"double":"triple"}${num}`;
-          user[fieldName] = (user[fieldName]||0)+1;
+          const fieldName = `${count === 2 ? "double" : "triple"}${num}`;
+          user[fieldName] = (user[fieldName] || 0) + 1;
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
-          if(payout>user.maxWon) user.maxWon = payout;
+          if (payout > user.maxWon) user.maxWon = payout;
   
-          resultText = count===3
-            ? `🎉 **TRIPLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`
-            : `⭐ **DOUBLE ${num}!** You won **${shownMultiplier}x**!\n💵 ${moneyFormat.format(bet)} × ${shownMultiplier} = ${moneyFormat.format(payout)}`;
+          resultText = count === 3
+            ? `🎉 **TRIPLE ${num}!** You won **${realMultiplier.toFixed(2)}x**!\n💵 ${moneyFormat.format(bet)} × ${realMultiplier.toFixed(2)} = ${moneyFormat.format(payout)}`
+            : `⭐ **DOUBLE ${num}!** You won **${realMultiplier.toFixed(2)}x**!\n💵 ${moneyFormat.format(bet)} × ${realMultiplier.toFixed(2)} = ${moneyFormat.format(payout)}`;
         } else {
           user.moneyNetSlots = +(user.moneyEarnedSlots - user.moneySpentSlots).toFixed(2);
+          user.money = +(user.money - bet).toFixed(2); // deduct bet if lost
         }
   
         await user.save();
   
         // Show final result
         const resultEmbed = new EmbedBuilder()
-          .setColor(payout>0 ? 0x2ecc71 : 0xe74c3c)
+          .setColor(payout > 0 ? 0x2ecc71 : 0xe74c3c)
           .setTitle("🎰 Slot Machine")
-          .setDescription(finalSlots.map(n=>numberEmojis[n-1]).join(" "))
+          .setDescription(finalSlots.map(n => numberEmojis[n - 1]).join(" "))
           .addFields(
-            {name:"Bet",value:moneyFormat.format(bet),inline:true},
-            {name:"Result",value:resultText,inline:false},
-            {name:"New Balance",value:moneyFormat.format(user.money.toFixed(2)),inline:true}
+            { name: "Bet", value: moneyFormat.format(bet), inline: true },
+            { name: "Result", value: resultText, inline: false },
+            { name: "New Balance", value: moneyFormat.format(user.money.toFixed(2)), inline: true }
           );
   
-        await button.editReply({embeds:[resultEmbed], components:[]});
+        await button.editReply({ embeds: [resultEmbed], components: [] });
       });
     }
   };
