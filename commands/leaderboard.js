@@ -236,7 +236,7 @@ module.exports = {
       if (blackjackPoints > 5) {
         const username = (await interaction.client.users.fetch(userId)).username.replace(/([*_`~|\\])/g, '\\$1');
         const points = formatNumber(user.points);
-        leaderboardTextBlackjack += `**${blackjackPoints}\\. ${username} | ${points} Points**`;
+        leaderboardTextBlackjack += `**${blackjackPoints}\\. ${username} | ${points} Points\n**`;
       }
 
       for (let i = 0; i < top5SlotsUsers.length; i++) {

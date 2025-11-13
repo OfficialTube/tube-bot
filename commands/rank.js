@@ -3,6 +3,13 @@ const User = require("../models/User");
 const { logOffline } = require("../utils/logger");
 const { getMultiplier } = require("../utils/multiplier");
 
+const moneyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 function formatNumber(n)
 {
   if (n == null || isNaN(n)) return "0";
@@ -25,7 +32,7 @@ function formatMoney(n)
   if (n == null || isNaN(n)) return "$0";
   else
   {
-    return "$" + n.toLocaleString();
+    return moneyFormatter.format(n);
   }
 }
 
