@@ -61,7 +61,6 @@ module.exports = {
         try {
             let user = await User.findOne({ userId });
             const HOUSE_ID = '464597977798017024';
-            let house = await User.findOne({ userId: HOUSE_ID});
             if (!user || user.money < 10) {
                 activeGames.delete(userId);
                 return interaction.reply({
@@ -111,10 +110,10 @@ module.exports = {
                                 .setColor(Colors.LOSE)],
                             components: []
                         });
-                        if(interaction.user.id !== HOUSE_ID)
-                        {
-                            house.money+=10;
+                        if (interaction.user.id !== HOUSE_ID) {
+                            await User.updateOne({ userId: HOUSE_ID }, { $inc: { money: 10 } });
                         }
+
                         user.money -= 10;
                         user.losses++;
                         user.rounds++;
@@ -123,7 +122,6 @@ module.exports = {
                         user.streakCurrent = 0;
                         user.points--;
                         await user.save();
-                        await house.save();
                     } else {
                         await i.update({
                             embeds: [new EmbedBuilder()
@@ -178,9 +176,8 @@ module.exports = {
                         points = 2;
                         money = 15;
                         resultColor = Colors.BLACKJACK;
-                        if(interaction.user.id !== HOUSE_ID)
-                        {
-                            house.money-=money;
+                        if (interaction.user.id !== HOUSE_ID) {
+                            await User.updateOne({ userId: HOUSE_ID }, { $inc: { money: -money } });
                         }
                         user.money += money;
                         user.wins++;
@@ -194,15 +191,13 @@ module.exports = {
                         user.pxp += 15;
                         resultText = `Blackjack!\nMoney Earned: $${money}\nPoints Earned: ${points * streak} (${points} × ${streak} streak)`;
                         await user.save();
-                        await house.save();
                     } else if (dealerTotal > 21 || playerTotal > dealerTotal) {
                         user.streakCurrent++;
                         points = 1;
                         money = 10;
                         resultColor = Colors.WIN;
-                        if(interaction.user.id !== HOUSE_ID)
-                        {
-                            house.money-=money;
+                        if (interaction.user.id !== HOUSE_ID) {
+                            await User.updateOne({ userId: HOUSE_ID }, { $inc: { money: -money } });
                         }
                         user.money += money;
                         user.wins++;
@@ -215,15 +210,13 @@ module.exports = {
                         user.pxp += 10;
                         resultText = `You win!\nMoney Earned: $${money}\nPoints Earned: ${points * streak} (${points} × ${streak} streak)`;
                         await user.save();
-                        await house.save();
                     } else if (playerTotal < dealerTotal) {
                         points = -1;
                         money = -10;
                         user.streakCurrent = 0;
                         resultColor = Colors.LOSE;
-                        if(interaction.user.id !== HOUSE_ID)
-                        {
-                            house.money+=10;
+                        if (interaction.user.id !== HOUSE_ID) {
+                            await User.updateOne({ userId: HOUSE_ID }, { $inc: { money: 10 } });
                         }
                         user.money += money;
                         user.losses++;
@@ -234,7 +227,6 @@ module.exports = {
                         user.points--;
                         resultText = `You lose!\nMoney Earned: -$10\nPoints Earned: ${points}`;
                         await user.save();
-                        await house.save();
                     } else {
                         user.ties++;
                         user.rounds++;
