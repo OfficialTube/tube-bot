@@ -126,10 +126,10 @@ const {
   
         // Subtract bet immediately
         user.money = +(user.money - bet).toFixed(2);
-        if(interaction.user.id !== HOUSE_ID)
-        {
-            house.money = +(house.money + bet).toFixed(2);
+        if (interaction.user.id !== HOUSE_ID) {
+          await User.updateOne({ userId: HOUSE_ID }, { $inc: { money: bet } });
         }
+
   
         // Always update rounds, money bet, money spent
         user.roundsSlots = (user.roundsSlots || 0) + 1;
@@ -167,10 +167,10 @@ const {
   
           // Add winnings
           user.money = +(user.money + payout).toFixed(2);
-          if(interaction.user.id !== HOUSE_ID)
-            {
-                house.money = +(house.money - payout).toFixed(2);
-            }
+          if (interaction.user.id !== HOUSE_ID) {
+            await User.updateOne({ userId: HOUSE_ID }, { $inc: { money: -payout } });
+          }
+
           user.moneyEarnedSlots = +(user.moneyEarnedSlots || 0) + payout;
   
           // Update max win
