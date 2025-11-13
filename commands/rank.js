@@ -83,6 +83,10 @@ module.exports = {
       const blackjackPoints = allBlackjackUsers.findIndex(u => u.userId === userId) + 1;
       const totalBlackjackUsers = allBlackjackUsers.length;
 
+      const allSlotsUsers = await User.find({guildId, roundsSlots: { $gt: 0}}).sort({moneyEarnedSlots: -1});
+      const slotsMoney = allSlotsUsers.findIndex(u => u.userId === userId) + 1;
+      const totalSlotsUsers = allSlotsUsers.length;
+
       let weeklyRankDisplay;
       if (!weeklyRank)
       {
@@ -101,8 +105,16 @@ module.exports = {
         blackjackPointsDisplay = `Rank: ${formatNumber(blackjackPoints)} of ${formatNumber(totalBlackjackUsers)}`;
       }
 
+      let slotsMoneyDisplay;
+      if(!slotsMoney)
+      {
+        slotsMoneyDisplay = "Rank: Unranked";
+      } else{
+        slotsMoneyDisplay = `Rank: ${formatNumber(slotsMoney)} of ${formatNumber(totalSlotsUsers)}`;
+      }
+
       return interaction.editReply({
-        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}\n\n**__Blackjack Stats__**\n${blackjackPointsDisplay}\nPoints: ${formatNumber(user.points)}\n\n**__Money:__**\n${formatMoney(user.money)}`,
+        content: `**${targetUser.tag.replace(/([*_`~|\\])/g, '\\$1')}'s Rank**\n\n**__All Time:__**\nRank: ${formatNumber(rank)} of ${formatNumber(totalUsers)}\nLevel: ${user.level}\nXP: ${formatNumber(user.xp)}/${formatNumber(user.levelxp)}\nMultiplier: ${xpmultiplier}x\nTotal XP: ${formatNumber(user.totalxp)}\n\n**__This Week:__**\n${weeklyRankDisplay}\nTotal XP: ${formatNumber(user.weeklyxp)}\n\n**__Blackjack Stats__**\n${blackjackPointsDisplay}\nPoints: ${formatNumber(user.points)}\n\n**__Slots Stats__**\n${slotsMoneyDisplay}\nEarned: ${formatMoney(user.moneyEarnedSlots)}\n\n**__Money:__**\n${formatMoney(user.money)}`,
       });
 
     } catch (err) {
