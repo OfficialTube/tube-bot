@@ -174,7 +174,7 @@ module.exports = {
       let leaderboardTextAll = `## **__All Time__**\n\n`;
       let leaderboardTextWeekly =  `## **__This Week__**\n\n`;
       let leaderboardTextBlackjack = `## **__Blackjack__**\n\n`;
-      let leaderboardTextSlots = `## ** __Slots__**\n\n`;
+      let leaderboardTextSlots = `## **__Slots__**\n\n`;
 
       for (let i = 0; i < top5all.length; i++) {
         const u = top5all[i];
@@ -236,7 +236,7 @@ module.exports = {
       if (blackjackPoints > 5) {
         const username = (await interaction.client.users.fetch(userId)).username.replace(/([*_`~|\\])/g, '\\$1');
         const points = formatNumber(user.points);
-        leaderboardTextBlackjack += `**${blackjackPoints}\\. ${username} | ${points} Points\n**`;
+        leaderboardTextBlackjack += `**${blackjackPoints}\\. ${username} | ${points} Points**\n`;
       }
 
       for (let i = 0; i < top5SlotsUsers.length; i++) {
