@@ -4,6 +4,7 @@ const connectDB = require("./database");
 const fs = require("fs");
 const { handleMessageXP } = require("./levels");
 const { handleViewerGamesQueueInteractions } = require('./interactions/viewerGamesQueueInteractions');
+const ScheduledMessage = require('./models/ScheduledMessages');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -33,6 +34,37 @@ setClient(client);
 client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
   logOffline("Bot is now online!");
+
+  // Scheduler Loop
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const jobs = await ScheduledMessage.find({
+        sent: false,
+        runAt: { $lte: now }
+      });
+
+      for (const job of jobs) {
+        try {
+          const channel = await client.channels.fetch(job.channelId);
+
+          if(!channel) continue;
+
+          await channel.send({
+            content: job.content,
+            allowedMentions: { parse: ['roles', 'everyone']}
+          });
+
+          job.sent = true;
+          await job.save();
+        } catch (err) {
+          console.error("Failed to send scheduled message:", err);
+        }
+      }
+    } catch (error) {
+      console.error("Scheduler error:", error);
+    }
+  }, 30000);
 });
 
 client.on("interactionCreate", async interaction => {
