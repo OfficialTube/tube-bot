@@ -32,7 +32,7 @@ module.exports = {
         }
 
         const channel = interaction.options.getChannel('channel');
-        const message = interaction.options.getString('message');
+        const message = interaction.options.getString('message').replace(/\\n/g, '\n');
         const unix = interaction.options.getInteger('unix');
 
         if(unix.toString().length !== 10)
