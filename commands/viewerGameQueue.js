@@ -49,9 +49,9 @@ module.exports = {
             try {
                 // 1. Post the initial empty schedule block FIRST so it sits at the top
                 const initialEmbed = new EmbedBuilder()
-                    .setTitle('🎮 Phasmophobia Viewer Games Live Schedule')
+                    .setTitle('Phasmophobia Viewer Games Live Schedule')
                     .setColor(0x2f3136)
-                    .setDescription('The queue is now officially open! Select a difficulty below to build your group lineup.');
+                    .setDescription('The queue is now officially open! Select a difficulty below to enter the queue.');
 
                 const scheduleMessage = await queueChannel.send({ embeds: [initialEmbed] });
 
@@ -63,7 +63,7 @@ module.exports = {
                 
                 // 3. Log this ID to your console! You will need to copy this ID.
                 console.log(`=========================================`);
-                console.log(`🚨 LIVE SCHEDULE MESSAGE DEPLOYED SUCCESSFULLY!`);
+                console.log(`LIVE SCHEDULE MESSAGE DEPLOYED SUCCESSFULLY!`);
                 console.log(`Message ID: ${scheduleMessage.id}`);
                 console.log(`Target Epoch: ${epoch}`);
                 console.log(`=========================================`);

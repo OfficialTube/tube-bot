@@ -5,10 +5,8 @@ const { refreshSchedule } = require('../utils/queueScheduler');
 const userSelections = new Map();
 const difficultyLabels = { "1": "Professional", "2": "Nightmare", "3": "0 Sanity, 0 Evidence" };
 
-// Hardcoded Public Channel Tracking Setup
 const PUBLIC_QUEUE_CHANNEL_ID = "1430021464056402010"; 
 
-// Active Metadata Configuration Handles
 let liveScheduleMessageId = null;
 let liveTargetEpoch = 0;
 
@@ -21,7 +19,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     // STEP 1 — User selects main difficulty
     if (interaction.customId === "queue_difficulty") {
-        const diff = interaction.values[0];
+        const diff = interaction.values;
         userSelections.set(userId, { difficulty: diff });
         const nextButton = new ButtonBuilder().setCustomId("queue_next").setLabel("Next").setStyle(ButtonStyle.Success);
         
@@ -64,7 +62,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     // STEP 3 — Subscriber selects bonus difficulty
     else if (interaction.customId === "sub_queue_difficulty") {
-        const diff = interaction.values[0];
+        const diff = interaction.values;
         const current = userSelections.get(userId) || {};
         current.subDifficulty = diff;
         userSelections.set(userId, current);
@@ -81,7 +79,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
         const data = userSelections.get(userId);
         const confirmButton = new ButtonBuilder().setCustomId("queue_confirm").setLabel("Confirm").setStyle(ButtonStyle.Primary);
         return interaction.update({ 
-            content: `**Selected Schedule Queue Requests:**\n• Game 1/2 Pool: ${difficultyLabels[data.difficulty]}\n• Bonus Game 3/4 Pool: ${difficultyLabels[data.subDifficulty]}\nClick **Confirm** to lock in your placement positions.`, 
+            content: `**Selected Schedule Queue Requests:**\n• Games: ${difficultyLabels[data.difficulty]}\n• Bonus Games: ${difficultyLabels[data.subDifficulty]}\nClick **Confirm** to confirm your spots in the queue.`, 
             components: [new ActionRowBuilder().addComponents(confirmButton)], 
         });
     } 
@@ -91,18 +89,31 @@ async function handleViewerGamesQueueInteractions(interaction) {
         const data = userSelections.get(userId);
         if (!data || !data.difficulty) return interaction.reply({ content: "No selection session cached.", ephemeral: true });
 
-        const targets = [data.difficulty];
-        if (data.subDifficulty) targets.push(data.subDifficulty);
+        // Keep selections split as explicit first and second choices
+        const choices = [
+            { diff: data.difficulty, isBonus: false },
+        ];
+        if (data.subDifficulty) {
+            choices.push({ diff: data.subDifficulty, isBonus: true });
+        }
 
         let successfullyJoinedCount = 0;
 
-        for (const diff of targets) {
+        for (let i = 0; i < choices.length; i++) {
+            const currentChoice = choices[i];
+            const diff = currentChoice.diff;
+
+            // Find an open group where they aren't already listed
             let targetGroup = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": { $ne: userId } });
 
             if (!targetGroup) {
-                const duplicateCheck = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": userId });
-                if (duplicateCheck) continue;
+                // If this is their first choice, or a bonus choice for a DIFFERENT difficulty, check for duplicates to prevent exploit spamming
+                if (!currentChoice.isBonus || data.difficulty !== data.subDifficulty) {
+                    const duplicateCheck = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": userId });
+                    if (duplicateCheck) continue; // Skip since they are already waiting there
+                }
 
+                // Enforce global 9 group limit ceiling cap
                 const totalGroupsExistCount = await ViewerQueue.countDocuments();
                 if (totalGroupsExistCount >= 9) continue; 
 
@@ -123,7 +134,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
         userSelections.delete(userId);
 
         if (successfullyJoinedCount === 0) {
-            return interaction.update({ content: "❌ **Queue Entry Denied:** The total pool limit is capped at 9 full groups, or you are already waiting in those open difficulties.", components: [] });
+            return interaction.update({ content: "❌ **Queue Entry Denied:** The total groups limit is capped at 9 full groups, or you are already waiting in those open difficulties.", components: [] });
         }
 
         // Live Dynamic Schedule Re-Calculation Call Trigger
@@ -133,11 +144,10 @@ async function handleViewerGamesQueueInteractions(interaction) {
             console.log(`⚠️ Warning: User joined queue, but /lobby set_metadata has not been run by an admin yet.`);
         }
 
-        return interaction.update({ content: `✅ Registered successfully! Your slot listings are saved and visible on the schedule.`, components: [] });
+        return interaction.update({ content: `✅ Registered successfully! Keep an eye on the schedule and your DMs!`, components: [] });
     }
 }
 
-// Fixed: Added the missing linkage setter logic explicitly back into the file execution lines
 function setScheduleConfig(msgId, targetEpoch) {
     liveScheduleMessageId = msgId;
     liveTargetEpoch = targetEpoch;

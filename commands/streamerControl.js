@@ -25,7 +25,7 @@ module.exports = {
         )
         .addSubcommand(sub => sub
             .setName('advance')
-            .setDescription('Advance active lobby to next stage (Start G1 -> Mid -> G2 -> Outro -> Finish).')
+            .setDescription('Advance active lobby to next stage.')
         ),
 
     async execute(interaction) {
@@ -78,7 +78,7 @@ module.exports = {
                 for (const p of targetLobby.players) {
                     try {
                         const user = await interaction.client.users.fetch(p.id);
-                        await user.send(`🎮 **Your Phasmophobia Viewer Group is UP!**\nJoin NA Servers using code: \`${code}\`\n\n*Reminder: Do not share this code or you will be banned from future games.*`);
+                        await user.send(`**Your Phasmophobia Viewer Group is UP!**\nJoin NA Servers using code: \`${code}\`\n\n*Reminder: Do not share this code or you will be banned from future games.*`);
                     } catch (e) { console.error(`Unreachable DM user path for: ${p.username}`); }
                 }
 
@@ -96,24 +96,24 @@ module.exports = {
                 if (active.status === 'setup') {
                     active.status = 'game1';
                     active.timeGame1Start = new Date();
-                    replyMsg = "🎮 Stage updated: **Game 1/2 is now IN PROGRESS**.";
+                    replyMsg = "Stage updated: **Game 1/2 is now IN PROGRESS**.";
                 } 
                 else if (active.status === 'game1') {
                     active.status = 'midgame';
                     active.timeGame1End = new Date();
-                    replyMsg = "☕ Stage updated: **Game 1 complete.** Now in post-game review break.";
+                    replyMsg = "Stage updated: **Game 1 complete.** Now in post-game review break.";
                 } 
                 else if (active.status === 'midgame') {
                     active.status = 'game2';
                     active.timeGame2Start = new Date();
-                    replyMsg = "💀 Stage updated: **Game 2/2 is now IN PROGRESS**.";
+                    replyMsg = "Stage updated: **Game 2/2 is now IN PROGRESS**.";
 
                     const nextUp = await ViewerQueue.findOne({ isFull: true, status: 'waiting' }).sort({ filledAt: 1 });
                     if (nextUp) {
                         for (const p of nextUp.players) {
                             try {
                                 const user = await interaction.client.users.fetch(p.id);
-                                await user.send(`⚠️ **Standby Notice:** The active streaming lobby has just launched their **last game**. Please boot up Phasmophobia and stay ready to receive your room entry invite code!`);
+                                await user.send(`⚠️ **Standby Notice:** The group before you has just started their **last game**. Please launch Phasmophobia and stay ready to receive your room entry invite code! Make sure your region is set to NA in-game. `);
                             } catch (e) {}
                         }
                     }
@@ -121,12 +121,12 @@ module.exports = {
                 else if (active.status === 'game2') {
                     active.status = 'outro';
                     active.timeGame2End = new Date();
-                    replyMsg = "👋 Stage updated: **Game 2 complete.** Now wrapping up with the team.";
+                    replyMsg = "Stage updated: **Game 2 complete.**";
                 } 
                 else if (active.status === 'outro') {
                     active.status = 'completed';
                     active.timeOutroEnd = new Date();
-                    replyMsg = "🏁 Stage updated: **Lobby Completely Finished.** Active channel cleared! Use `/lobby send_code` to pull in the next team link.";
+                    replyMsg = "Stage updated: **Lobby Completely Finished.** Active channel cleared! Use `/lobby send_code` to pull in the next team link.";
                 }
 
                 await active.save();
