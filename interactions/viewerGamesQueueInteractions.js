@@ -19,10 +19,9 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     // STEP 1 — User selects main difficulty
     if (interaction.customId === "queue_difficulty") {
-        const diff = interaction.values[0]; 
+        const diff = interaction.values[0];
         userSelections.set(userId, { difficulty: diff });
         const nextButton = new ButtonBuilder().setCustomId("queue_next").setLabel("Next").setStyle(ButtonStyle.Success);
-        
         return interaction.reply({ 
             content: `You selected: **${difficultyLabels[diff]}**.\nClick **Next** to continue.`, 
             components: [new ActionRowBuilder().addComponents(nextButton)], 
@@ -62,7 +61,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     // STEP 3 — Subscriber selects bonus difficulty
     else if (interaction.customId === "sub_queue_difficulty") {
-        const diff = interaction.values[0]; 
+        const diff = interaction.values[0];
         const current = userSelections.get(userId) || {};
         current.subDifficulty = diff;
         userSelections.set(userId, current);
@@ -118,18 +117,22 @@ async function handleViewerGamesQueueInteractions(interaction) {
             const currentChoice = choices[i];
             const diff = currentChoice.diff;
 
-            let targetGroup = await ViewerQueue.findOne({ difficulty: diff, isFull: false });
-
-            if (targetGroup && targetGroup.players.some(p => p.id === userId)) {
-                continue;
-            }
+            // FIXED: Search for an open group for this difficulty where this user is NOT already listed
+            let targetGroup = await ViewerQueue.findOne({ 
+                difficulty: diff, 
+                isFull: false,
+                "players.id": { $ne: userId }
+            });
 
             if (!targetGroup) {
+                // If they are picking different difficulties for main and bonus, prevent duplicate entry exploit
                 const holdsDuplicateSlot = activeGroups.some(g => g.difficulty === diff && g.isFull === false && g.players.some(p => p.id === userId));
+                
                 if (holdsDuplicateSlot && (!currentChoice.isBonus || data.difficulty !== data.subDifficulty)) {
                     continue; 
                 }
 
+                // Global limit enforcement check
                 const totalGroupsExistCount = await ViewerQueue.countDocuments();
                 if (totalGroupsExistCount >= 9) continue; 
 
@@ -145,6 +148,9 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
             await targetGroup.save();
             successfullyJoinedCount++;
+            
+            // Push the newly updated group into the local loop array check to keep things accurate for the next item cycle
+            activeGroups.push(targetGroup);
             
             if ((activeUserGroupsCount + successfullyJoinedCount) >= maxAllowedGroups) {
                 break;
