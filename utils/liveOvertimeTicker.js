@@ -11,7 +11,7 @@ function startOvertimeTicker(client, channelId, messageId, queueStartTimeEpoch) 
         } catch (error) {
             console.error("Overtime ticker loop exception:", error);
         }
-    }, 60000); // Ticks background evaluation updates forward every 60 seconds
+    }, 60000); 
 }
 
 module.exports = { startOvertimeTicker };

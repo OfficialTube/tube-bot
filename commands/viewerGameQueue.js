@@ -6,7 +6,7 @@ module.exports = {
         .setDescription('Open up a queue for Phasmophobia Viewer Games (admin only)')
         .addStringOption(option => option
             .setName('timestamp')
-            .setDescription('Epoch timestamp for when the queue should open.')
+            .setDescription('Epoch timestamp for when the games ACTUALLY start.')
             .setRequired(true)
         ),
     async execute(interaction) {
@@ -25,21 +25,17 @@ module.exports = {
         const sendTime = epoch * 1000;
         const delay = sendTime - Date.now();
 
-        if (delay <= 0) {
-            return interaction.reply({ content: '❌ That time is in the past.', ephemeral: true });
-        }
-
-        // 1. DEPLOY THE MASTER SCHEDULE EMBED IMMEDIATELY FOR EARLY STREAM CONFIGURATION!
+        // 1. DEPLOY THE MASTER SCHEDULE EMBED IMMEDIATELY!
         const initialEmbed = new EmbedBuilder()
             .setTitle('Phasmophobia Viewer Games Live Schedule')
             .setColor('#2f3136')
-            .setDescription('The queue schedule board has been deployed. The entry registration selector dropdown will open up automatically 30 minutes before the stream starts!');
+            .setDescription(`You can register for viewer games on <t:${epoch}:F>`);
 
         const scheduleMessage = await queueChannel.send({ embeds: [initialEmbed] });
 
         // 2. Return copy-paste linkage tools to you immediately on screen
         await interaction.reply({ 
-            content: `✅ **Schedule board deployed live!**\n\nCopy and run this exact linkage command in your staff channel right now to lock it in:\n\`\`\`/lobby set_metadata message_id: ${scheduleMessageMessageId || scheduleMessage.id} epoch: ${epoch}\`\`\``, 
+            content: `✅ **Schedule board deployed live!**\n\nCopy and run this exact linkage command in your staff channel right now to lock it in:\n\`\`\`/lobby set_metadata message_id: ${scheduleMessage.id} epoch: ${epoch}\`\`\``, 
             ephemeral: true 
         });
 
@@ -76,6 +72,6 @@ module.exports = {
             } catch (error) {
                 console.error("Delayed dropdown deployment failed:", error);
             }
-        }, delay);
+        }, delay <= 0 ? 0 : delay); // Safety fallback if you set it to drop instantly
     },
 };

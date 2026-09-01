@@ -116,7 +116,7 @@ module.exports = {
                         for (const p of nextUp.players) {
                             try {
                                 const user = await interaction.client.users.fetch(p.id);
-                                await user.send(`⚠️ **Standby Notice:** The group before you has just started their **last game**. Please launch Phasmophobia and stay ready to receive your lobby invite code! Make sure your region is set to NA in-game.`);
+                                await user.send(`⚠️ **Standby Notice:** The group before you has just started their **last game**. Please launch Phasmophobia and stay ready to receive your invite code! Make sure your region is set to NA in-game.`);
                             } catch (e) {}
                         }
                     }
