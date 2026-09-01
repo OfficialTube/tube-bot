@@ -5,6 +5,7 @@ const fs = require("fs");
 const { handleMessageXP } = require("./levels");
 const { handleViewerGamesQueueInteractions } = require('./interactions/viewerGamesQueueInteractions');
 const ScheduledMessage = require('./models/ScheduledMessages');
+const { startScheduleChecker } = require('./utils/scheduleChecker');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
@@ -34,6 +35,8 @@ setClient(client);
 client.once("ready", () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
   logOffline("Bot is now online!");
+
+  startScheduleChecker(client);
 
   // Scheduler Loop
   setInterval(async () => {
