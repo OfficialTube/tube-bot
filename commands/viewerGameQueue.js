@@ -16,7 +16,7 @@ module.exports = {
 
         const queueChannelId = '1430021464056402010';
         const queueChannel = await interaction.guild.channels.fetch(queueChannelId);
-        const epoch = parseInt(interaction.options.getString('timestamp').trim());
+        const epoch = parseInt(interaction.options.getString('timestamp').trim(), 10);
 
         if (isNaN(epoch)) {
             return interaction.reply({ content: 'Invalid epoch timestamp.', ephemeral: true });
@@ -42,13 +42,12 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(difficultyMenu);
 
-        // Your original working timer code block
         setTimeout(async () => {
             try {
                 // 1. Send the schedule embed FIRST so it stays pinned at the top
                 const initialEmbed = new EmbedBuilder()
                     .setTitle('Phasmophobia Viewer Games Live Schedule')
-                    .setColor(0x2f3136)
+                    .setColor('#2f3136') // Fixed hex format to avoid validation crashes
                     .setDescription('The queue is now officially open! Select a difficulty below to join the queue.');
 
                 const scheduleMessage = await queueChannel.send({ embeds: [initialEmbed] });

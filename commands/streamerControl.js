@@ -15,7 +15,6 @@ module.exports = {
             .setName('set_metadata')
             .setDescription('Link active layout tracking references.')
             .addStringOption(o => o.setName('message_id').setDescription('Schedule post message ID').setRequired(true))
-            // Switched to String Option to natively prevent 32-bit number constraint exceptions
             .addStringOption(o => o.setName('epoch').setDescription('The exact open queue timestamp string numbers').setRequired(true))
         )
         .addSubcommand(sub => sub
@@ -29,7 +28,6 @@ module.exports = {
         ),
 
     async execute(interaction) {
-        // Safe Role Validation
         if (!interaction.member.roles.cache.has('1379719761075900468')) {
             return interaction.reply({ content: '❌ Unauthorized.', ephemeral: true });
         }
@@ -40,8 +38,8 @@ module.exports = {
             if (subcommand === 'set_metadata') {
                 const msgIdInput = interaction.options.getString('message_id').trim();
                 const rawEpoch = interaction.options.getString('epoch').trim();
-                
                 const parsedEpoch = parseInt(rawEpoch, 10);
+
                 if (isNaN(parsedEpoch)) {
                     return interaction.reply({ content: '❌ Invalid epoch timestamp number format. Please check your text inputs.', ephemeral: true });
                 }
@@ -49,19 +47,15 @@ module.exports = {
                 ADMIN_TRACKED_MSG_ID = msgIdInput;
                 ADMIN_TRACKED_EPOCH = parsedEpoch;
                 
-                // Transmit keys to your interaction processor cache lines
                 setScheduleConfig(ADMIN_TRACKED_MSG_ID, ADMIN_TRACKED_EPOCH);
-                
-                // Fire off immediate timetable refresh array maps
                 await refreshSchedule(interaction.client, PUBLIC_QUEUE_CHANNEL_ID, ADMIN_TRACKED_MSG_ID, ADMIN_TRACKED_EPOCH);
                 return interaction.reply({ content: `✅ Configuration metadata registered! Live Schedule tracking is active.`, ephemeral: true });
             }
 
-            // STAGE 1: INGEST NEW TEAM & TRANSMIT LOBBY KEYS
             if (subcommand === 'send_code') {
                 const code = interaction.options.getString('code').trim();
-
                 const existingActive = await ViewerQueue.findOne({ status: { $in: ['setup', 'game1', 'midgame', 'game2', 'outro'] } });
+
                 if (existingActive) {
                     return interaction.reply({ content: `⚠️ Clear out or finish the active running group before starting a new one! (Current stage: \`${existingActive.status}\`)`, ephemeral: true });
                 }
@@ -86,7 +80,6 @@ module.exports = {
                 return interaction.reply({ content: `✅ Group moved to **Setup Stage**. Sent code \`${code}\` to players!`, ephemeral: true });
             }
 
-            // DYNAMIC TIMELINE STATE ADVANCER
             if (subcommand === 'advance') {
                 const active = await ViewerQueue.findOne({ status: { $in: ['setup', 'game1', 'midgame', 'game2', 'outro'] } });
                 if (!active) return interaction.reply({ content: '❌ There is no active group currently running to advance.', ephemeral: true });
@@ -113,7 +106,7 @@ module.exports = {
                         for (const p of nextUp.players) {
                             try {
                                 const user = await interaction.client.users.fetch(p.id);
-                                await user.send(`⚠️ **Standby Notice:** The group before you has just started their **last game**. Please launch Phasmophobia and stay ready to receive your room entry invite code! Make sure your region is set to NA in-game. `);
+                                await user.send(`⚠️ **Standby Notice:** The group before you has just started their **last game**. Please launch Phasmophobia and stay ready to receive your room entry invite code! Make sure your region is set to NA in-game.`);
                             } catch (e) {}
                         }
                     }

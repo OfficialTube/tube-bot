@@ -19,7 +19,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     // STEP 1 — User selects main difficulty
     if (interaction.customId === "queue_difficulty") {
-        // FIXED: Extract string out of array so text labels mapping and database queries function safely
         const diff = interaction.values[0]; 
         userSelections.set(userId, { difficulty: diff });
         const nextButton = new ButtonBuilder().setCustomId("queue_next").setLabel("Next").setStyle(ButtonStyle.Success);
@@ -63,7 +62,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     // STEP 3 — Subscriber selects bonus difficulty
     else if (interaction.customId === "sub_queue_difficulty") {
-        // FIXED: Extract string out of array
         const diff = interaction.values[0]; 
         const current = userSelections.get(userId) || {};
         current.subDifficulty = diff;
@@ -135,7 +133,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
             return interaction.update({ content: "❌ **Queue Entry Denied:** The total groups limit is capped at 9 full groups, or you are already waiting in those open difficulties.", components: [] });
         }
 
-        // Live Dynamic Schedule Re-Calculation Call Trigger
         if (liveScheduleMessageId) {
             await refreshSchedule(interaction.client, PUBLIC_QUEUE_CHANNEL_ID, liveScheduleMessageId, liveTargetEpoch);
         } else {
