@@ -89,10 +89,29 @@ async function handleViewerGamesQueueInteractions(interaction) {
         const data = userSelections.get(userId);
         if (!data || !data.difficulty) return interaction.reply({ content: "No selection session cached.", ephemeral: true });
 
+        // 🛑 GLOBAL DUPLICATE ENTRY CHECK
+        // Count how many groups this player is ALREADY waiting or playing in
+        const activeUserGroupsCount = await ViewerQueue.countDocuments({
+            status: { $ne: 'completed' },
+            "players.id": userId
+        });
+
+        const hasSubRole = interaction.member.roles.cache.has(twitchSubRoleId);
+        const maxAllowedGroups = hasSubRole ? 2 : 1;
+
+        // If they have reached their limit, completely block them from adding more entries
+        if (activeUserGroupsCount >= maxAllowedGroups) {
+            userSelections.delete(userId);
+            return interaction.update({ 
+                content: `❌ **Queue Entry Denied:** You are already waiting in the maximum allowed number of groups (**${maxAllowedGroups}**) for your rank tier.`, 
+                components: [] 
+            });
+        }
+
         const choices = [
             { diff: data.difficulty, isBonus: false },
         ];
-        if (data.subDifficulty) {
+        if (data.subDifficulty && hasSubRole) {
             choices.push({ diff: data.subDifficulty, isBonus: true });
         }
 
@@ -102,14 +121,17 @@ async function handleViewerGamesQueueInteractions(interaction) {
             const currentChoice = choices[i];
             const diff = currentChoice.diff;
 
+            // Double check safety space constraint: are they already in an unfilled group for THIS specific difficulty?
             let targetGroup = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": { $ne: userId } });
 
             if (!targetGroup) {
+                // If they are picking different difficulties for main and bonus, make sure they aren't duplicate double-joining
                 if (!currentChoice.isBonus || data.difficulty !== data.subDifficulty) {
                     const duplicateCheck = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": userId });
                     if (duplicateCheck) continue; 
                 }
 
+                // Enforce global 9 group limit ceiling cap
                 const totalGroupsExistCount = await ViewerQueue.countDocuments();
                 if (totalGroupsExistCount >= 9) continue; 
 
@@ -125,14 +147,20 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
             await targetGroup.save();
             successfullyJoinedCount++;
+            
+            // Safety break: if a non-sub somehow bypassed and tried to process a second option, stop them
+            if ((activeUserGroupsCount + successfullyJoinedCount) >= maxAllowedGroups) {
+                break;
+            }
         }
 
         userSelections.delete(userId);
 
         if (successfullyJoinedCount === 0) {
-            return interaction.update({ content: "❌ **Queue Entry Denied:** The total groups limit is capped at 9 full groups, or you are already waiting in those open difficulties.", components: [] });
+            return interaction.update({ content: "❌ **Queue Entry Denied:** The total groups limit is capped at 9 full groups, or you are already waiting in those difficulties.", components: [] });
         }
 
+        // Live Dynamic Schedule Re-Calculation Call Trigger
         if (liveScheduleMessageId) {
             await refreshSchedule(interaction.client, PUBLIC_QUEUE_CHANNEL_ID, liveScheduleMessageId, liveTargetEpoch);
         } else {
