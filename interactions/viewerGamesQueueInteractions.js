@@ -19,7 +19,8 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     // STEP 1 — User selects main difficulty
     if (interaction.customId === "queue_difficulty") {
-        const diff = interaction.values;
+        // FIXED: Extract string out of array so text labels mapping and database queries function safely
+        const diff = interaction.values[0]; 
         userSelections.set(userId, { difficulty: diff });
         const nextButton = new ButtonBuilder().setCustomId("queue_next").setLabel("Next").setStyle(ButtonStyle.Success);
         
@@ -62,7 +63,8 @@ async function handleViewerGamesQueueInteractions(interaction) {
 
     // STEP 3 — Subscriber selects bonus difficulty
     else if (interaction.customId === "sub_queue_difficulty") {
-        const diff = interaction.values;
+        // FIXED: Extract string out of array
+        const diff = interaction.values[0]; 
         const current = userSelections.get(userId) || {};
         current.subDifficulty = diff;
         userSelections.set(userId, current);
@@ -89,7 +91,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
         const data = userSelections.get(userId);
         if (!data || !data.difficulty) return interaction.reply({ content: "No selection session cached.", ephemeral: true });
 
-        // Keep selections split as explicit first and second choices
         const choices = [
             { diff: data.difficulty, isBonus: false },
         ];
@@ -103,17 +104,14 @@ async function handleViewerGamesQueueInteractions(interaction) {
             const currentChoice = choices[i];
             const diff = currentChoice.diff;
 
-            // Find an open group where they aren't already listed
             let targetGroup = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": { $ne: userId } });
 
             if (!targetGroup) {
-                // If this is their first choice, or a bonus choice for a DIFFERENT difficulty, check for duplicates to prevent exploit spamming
                 if (!currentChoice.isBonus || data.difficulty !== data.subDifficulty) {
                     const duplicateCheck = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": userId });
-                    if (duplicateCheck) continue; // Skip since they are already waiting there
+                    if (duplicateCheck) continue; 
                 }
 
-                // Enforce global 9 group limit ceiling cap
                 const totalGroupsExistCount = await ViewerQueue.countDocuments();
                 if (totalGroupsExistCount >= 9) continue; 
 
