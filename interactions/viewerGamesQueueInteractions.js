@@ -89,17 +89,20 @@ async function handleViewerGamesQueueInteractions(interaction) {
         const data = userSelections.get(userId);
         if (!data || !data.difficulty) return interaction.reply({ content: "No selection session cached.", ephemeral: true });
 
-        // 🛑 GLOBAL DUPLICATE ENTRY CHECK
-        // Count how many groups this player is ALREADY waiting or playing in
-        const activeUserGroupsCount = await ViewerQueue.countDocuments({
-            status: { $ne: 'completed' },
-            "players.id": userId
+        // Fetch all incomplete active groups from the DB to evaluate them cleanly
+        const activeGroups = await ViewerQueue.find({ status: { $ne: 'completed' } });
+        
+        // Count entries manually via code logic to eliminate sub-document tracking bugs
+        let activeUserGroupsCount = 0;
+        activeGroups.forEach(g => {
+            if (g.players.some(p => p.id === userId)) {
+                activeUserGroupsCount++;
+            }
         });
 
         const hasSubRole = interaction.member.roles.cache.has(twitchSubRoleId);
         const maxAllowedGroups = hasSubRole ? 2 : 1;
 
-        // If they have reached their limit, completely block them from adding more entries
         if (activeUserGroupsCount >= maxAllowedGroups) {
             userSelections.delete(userId);
             return interaction.update({ 
@@ -108,9 +111,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
             });
         }
 
-        const choices = [
-            { diff: data.difficulty, isBonus: false },
-        ];
+        const choices = [{ diff: data.difficulty, isBonus: false }];
         if (data.subDifficulty && hasSubRole) {
             choices.push({ diff: data.subDifficulty, isBonus: true });
         }
@@ -121,17 +122,22 @@ async function handleViewerGamesQueueInteractions(interaction) {
             const currentChoice = choices[i];
             const diff = currentChoice.diff;
 
-            // Double check safety space constraint: are they already in an unfilled group for THIS specific difficulty?
-            let targetGroup = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": { $ne: userId } });
+            // Look for an unfilled group for this difficulty
+            let targetGroup = await ViewerQueue.findOne({ difficulty: diff, isFull: false });
+
+            // If an unfilled group exists but they are already in it, don't double join the same exact document
+            if (targetGroup && targetGroup.players.some(p => p.id === userId)) {
+                continue;
+            }
 
             if (!targetGroup) {
-                // If they are picking different difficulties for main and bonus, make sure they aren't duplicate double-joining
-                if (!currentChoice.isBonus || data.difficulty !== data.subDifficulty) {
-                    const duplicateCheck = await ViewerQueue.findOne({ difficulty: diff, isFull: false, "players.id": userId });
-                    if (duplicateCheck) continue; 
+                // Check if they are already inside ANY open group for this specific difficulty to prevent exploit spamming
+                const holdsDuplicateSlot = activeGroups.some(g => g.difficulty === diff && g.isFull === false && g.players.some(p => p.id === userId));
+                if (holdsDuplicateSlot && (!currentChoice.isBonus || data.difficulty !== data.subDifficulty)) {
+                    continue; 
                 }
 
-                // Enforce global 9 group limit ceiling cap
+                // Global limit enforcement check
                 const totalGroupsExistCount = await ViewerQueue.countDocuments();
                 if (totalGroupsExistCount >= 9) continue; 
 
@@ -148,7 +154,6 @@ async function handleViewerGamesQueueInteractions(interaction) {
             await targetGroup.save();
             successfullyJoinedCount++;
             
-            // Safety break: if a non-sub somehow bypassed and tried to process a second option, stop them
             if ((activeUserGroupsCount + successfullyJoinedCount) >= maxAllowedGroups) {
                 break;
             }
@@ -160,7 +165,7 @@ async function handleViewerGamesQueueInteractions(interaction) {
             return interaction.update({ content: "❌ **Queue Entry Denied:** The total groups limit is capped at 9 full groups, or you are already waiting in those difficulties.", components: [] });
         }
 
-        // Live Dynamic Schedule Re-Calculation Call Trigger
+        // Trigger dynamic message re-render logic instantly
         if (liveScheduleMessageId) {
             await refreshSchedule(interaction.client, PUBLIC_QUEUE_CHANNEL_ID, liveScheduleMessageId, liveTargetEpoch);
         } else {
