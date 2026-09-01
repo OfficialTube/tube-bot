@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,7 +10,6 @@ module.exports = {
                 .setRequired(true)
         ),
     async execute(interaction) {
-        // Admin Role Security Check
         if (!interaction.member.roles.cache.has('1379719761075900468')) {
             return interaction.reply({ content: '❌ You do not have permissions to use this command.', ephemeral: true });
         }
@@ -18,12 +17,11 @@ module.exports = {
         const queueChannelId = '1430021464056402010';
         const queueChannel = await interaction.guild.channels.fetch(queueChannelId);
         
-        // Clean up text spacing and convert into an integer number base 10
         const rawTimestamp = interaction.options.getString('timestamp').trim();
         const epoch = parseInt(rawTimestamp, 10);
 
         if (isNaN(epoch)) {
-            return interaction.reply({ content: '❌ Invalid epoch timestamp number format. Please check your text value.', ephemeral: true });
+            return interaction.reply({ content: '❌ Invalid epoch timestamp number format.', ephemeral: true });
         }
 
         const sendTime = epoch * 1000;
@@ -46,13 +44,30 @@ module.exports = {
 
         const row = new ActionRowBuilder().addComponents(difficultyMenu);
 
-        // Schedule delayed delivery to match stream announcement prep window
+        // When the queue opens up 30 minutes before the stream:
         setTimeout(async () => {
             try {
+                // 1. Post the initial empty schedule block FIRST so it sits at the top
+                const initialEmbed = new EmbedBuilder()
+                    .setTitle('🎮 Phasmophobia Viewer Games Live Schedule')
+                    .setColor(0x2f3136)
+                    .setDescription('The queue is now officially open! Select a difficulty below to build your group lineup.');
+
+                const scheduleMessage = await queueChannel.send({ embeds: [initialEmbed] });
+
+                // 2. Post the entry dropdown menu SECOND so it sits right below the schedule
                 await queueChannel.send({ 
                     content: '# __Join the Phasmophobia Viewer Games Queue__\n\nSelect which difficulty you would like to play on below to reserve your space!', 
                     components: [row] 
                 });
+                
+                // 3. Log this ID to your console! You will need to copy this ID.
+                console.log(`=========================================`);
+                console.log(`🚨 LIVE SCHEDULE MESSAGE DEPLOYED SUCCESSFULLY!`);
+                console.log(`Message ID: ${scheduleMessage.id}`);
+                console.log(`Target Epoch: ${epoch}`);
+                console.log(`=========================================`);
+
             } catch (error) {
                 console.error("Scheduled queue broadcast script error:", error);
             }
