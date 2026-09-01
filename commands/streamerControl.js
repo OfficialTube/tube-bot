@@ -52,6 +52,7 @@ module.exports = {
                 return interaction.reply({ content: `✅ Configuration metadata registered! Live Schedule tracking is active.`, ephemeral: true });
             }
 
+            // STAGE 1: INGEST NEW TEAM & TRANSMIT LOBBY KEYS
             if (subcommand === 'send_code') {
                 const code = interaction.options.getString('code').trim();
                 const existingActive = await ViewerQueue.findOne({ status: { $in: ['setup', 'game1', 'midgame', 'game2', 'outro'] } });
@@ -60,12 +61,21 @@ module.exports = {
                     return interaction.reply({ content: `⚠️ Clear out or finish the active running group before starting a new one! (Current stage: \`${existingActive.status}\`)`, ephemeral: true });
                 }
 
-                const targetLobby = await ViewerQueue.findOne({ isFull: true, status: 'waiting' }).sort({ filledAt: 1 });
+                // 1. Try to find a FULL group first
+                let targetLobby = await ViewerQueue.findOne({ isFull: true, status: 'waiting' }).sort({ filledAt: 1 });
+                
+                // 2. FALLBACK: If no full groups are left, grab the oldest partial group instead!
                 if (!targetLobby) {
-                    return interaction.reply({ content: '❌ No full lobbies are flagged as waiting inside the database.', ephemeral: true });
+                    targetLobby = await ViewerQueue.findOne({ isFull: false, status: 'waiting' }).sort({ createdAt: 1 });
                 }
 
+                if (!targetLobby || targetLobby.players.length === 0) {
+                    return interaction.reply({ content: '❌ There are no lobbies (full or partial) waiting in the database right now.', ephemeral: true });
+                }
+
+                // Force lock the lobby so no one else can sneak into it while it's playing
                 targetLobby.status = 'setup';
+                targetLobby.isFull = true; 
                 targetLobby.timeSetupStart = new Date();
                 await targetLobby.save();
 
@@ -79,6 +89,7 @@ module.exports = {
                 await refreshSchedule(interaction.client, PUBLIC_QUEUE_CHANNEL_ID, ADMIN_TRACKED_MSG_ID, ADMIN_TRACKED_EPOCH);
                 return interaction.reply({ content: `✅ Group moved to **Setup Stage**. Sent code \`${code}\` to players!`, ephemeral: true });
             }
+
 
             if (subcommand === 'advance') {
                 const active = await ViewerQueue.findOne({ status: { $in: ['setup', 'game1', 'midgame', 'game2', 'outro'] } });
