@@ -24,7 +24,7 @@ module.exports = {
         )
         .addSubcommand(sub => sub
             .setName('advance')
-            .setDescription('Increments current lobby to next stage (Start Game 1 -> Mid Game -> Start Game 2 -> Outro -> Finish).')
+            .setDescription('Advance active lobby to next stage (Start G1 -> Mid -> G2 -> Outro -> Finish).')
         ),
 
     async execute(interaction) {
