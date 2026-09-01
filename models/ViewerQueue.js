@@ -2,12 +2,25 @@ const mongoose = require('mongoose');
 
 const queueSchema = new mongoose.Schema({
     difficulty: { type: String, required: true },
-    players: [{
-        id: String,
-        username: String,
-        joinedAt: { type: Date, default: Date.now }
+    players: [{ 
+        id: String, 
+        username: String, 
+        joinedAt: { type: Date, default: Date.now } 
     }],
-    isFull: {type: Boolean, default: false},
+    isFull: { type: Boolean, default: false },
+    filledAt: { type: Date, default: null }, 
+    
+    // Detailed Live Workflow State Tracker
+    status: { type: String, default: 'waiting' }, 
+    
+    // Absolute Manual Log History Timestamps (Saved for post-stream event evaluation)
+    timeSetupStart: { type: Date, default: null },
+    timeGame1Start: { type: Date, default: null },
+    timeGame1End: { type: Date, default: null },
+    timeGame2Start: { type: Date, default: null },
+    timeGame2End: { type: Date, default: null },
+    timeOutroEnd: { type: Date, default: null },
+    
     createdAt: { type: Date, default: Date.now },
 });
 
